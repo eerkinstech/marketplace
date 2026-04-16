@@ -1,5 +1,6 @@
 import { connectDatabase } from "../config/db.js";
 import { Category } from "../models/Category.js";
+import { HomeSection } from "../models/HomeSection.js";
 import { MenuSettings } from "../models/MenuSettings.js";
 import { Page } from "../models/Page.js";
 import { Product } from "../models/Product.js";
@@ -747,6 +748,7 @@ async function clearSeedData() {
   await Product.deleteMany({});
   await User.deleteMany({ email: { $in: vendorEmails } });
   await Category.deleteMany({});
+  await HomeSection.deleteMany({});
   await Page.deleteMany({ slug: { $in: marketplacePagesSeed.map((page) => page.slug) } });
   await SeoPage.deleteMany({ key: { $in: designedSeoPagesSeed.map((page) => page.key) } });
 }
