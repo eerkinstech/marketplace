@@ -1,0 +1,44 @@
+﻿import Link from "next/link";
+import { formatCurrency, getDiscountPercent, getProductImage } from "@/lib/utils/storefront";
+
+export function ProductCard({ product }) {
+  const image = getProductImage(product);
+  const discount = getDiscountPercent(product);
+
+  return (
+    <article className="product-card-dark group flex h-full flex-col">
+      <Link href={`/product/${product.slug}`} className="product-card-media">
+        {image ? (
+          <img
+            src={image}
+            alt={product.name}
+            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+          />
+        ) : <div className="flex h-full items-center justify-center text-sm text-white/55">No image</div>}
+        <div className="product-card-heart" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" className="h-5 w-5">
+            <path d="M12.1 20.3 4.9 13.4a4.9 4.9 0 0 1 6.9-7l.2.2.2-.2a4.9 4.9 0 0 1 6.9 7l-7.2 6.9Z" />
+          </svg>
+        </div>
+      </Link>
+      <div className="mt-4 flex flex-1 flex-col px-3 pb-1">
+        <Link href={`/product/${product.slug}`} className="line-clamp-2 text-[18px] font-semibold leading-[1.15] tracking-[-0.03em] text-white">
+          {product.name}
+        </Link>
+        <div className="mt-3 text-[13px] font-medium text-white/68">Lowest Ask</div>
+        <div className="mt-1 flex items-end gap-3">
+          <strong className="text-[28px] font-semibold leading-none tracking-[-0.04em] text-white">
+            {formatCurrency(product.price)}
+          </strong>
+          {product.compareAtPrice ? (
+            <span className="pb-0.5 text-sm text-white/34 line-through">{formatCurrency(product.compareAtPrice)}</span>
+          ) : null}
+        </div>
+        {discount ? (
+          <div className="mt-3 text-[12px] font-medium uppercase tracking-[0.18em] text-white/48">{discount}% off</div>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+

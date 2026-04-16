@@ -1,0 +1,619 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #10201a;
+  --color-sand: #f4efe7;
+  --color-brand: #0f766e;
+  --color-brand-deep: #0a4f4a;
+  --color-amber-glow: #d97706;
+  --color-mist: #ebe3d8;
+  --color-canvas: #fbf7f1;
+  --color-line: rgba(16, 32, 26, 0.08);
+  --shadow-soft: 0 18px 50px rgba(16, 32, 26, 0.08);
+  --radius-shell: 24px;
+  --font-display: "Poppins", "Montserrat", sans-serif;
+  --font-body: "Montserrat", "Poppins", sans-serif;
+  --home-page-bg: linear-gradient(180deg, #fbf7f1 0%, #f6efe6 100%);
+  --home-section-bg: rgba(255, 255, 255, 0.88);
+  --home-section-muted: #6a766f;
+  --home-section-line: rgba(16, 32, 26, 0.08);
+  --home-card-bg: #ffffff;
+  --home-card-muted: #6b7280;
+  --home-accent: #0e7a62;
+  --home-accent-soft: #e5f5ef;
+  --home-accent-strong: #0a5a46;
+  --home-hero-start: #f4eadf;
+  --home-hero-end: #fffdfa;
+  --home-hero-text: #10201a;
+  --home-hero-muted: rgba(16, 32, 26, 0.7);
+  --home-shadow: 0 18px 44px rgba(16, 32, 26, 0.08);
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      radial-gradient(circle at top left, rgba(217, 119, 6, 0.1), transparent 26%),
+      radial-gradient(circle at top right, rgba(15, 118, 110, 0.08), transparent 28%),
+      linear-gradient(180deg, #faf7f3 0%, #f6f1eb 100%);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  img {
+    display: block;
+    max-width: 100%;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+}
+
+@layer components {
+  .shell-container {
+    margin-inline: auto;
+    width: min(1240px, calc(100% - 48px));
+  }
+
+  .glass-card {
+    border: 1px solid var(--color-line);
+    background: rgb(255 255 255 / 0.8);
+    backdrop-filter: blur(12px);
+    border-radius: var(--radius-shell);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-full border border-black/10 bg-transparent px-5 py-3 text-sm font-semibold text-ink transition hover:-translate-y-0.5;
+  }
+
+  .field-input {
+    @apply w-full rounded-2xl border border-black/10 bg-white/75 px-4 py-3 outline-none transition focus:border-brand;
+  }
+
+  .eyebrow {
+    @apply text-[11px] uppercase tracking-[0.24em] text-brand;
+  }
+
+  .muted-copy {
+    @apply text-sm leading-6 text-slate-600 md:text-base;
+  }
+
+  .badge {
+    @apply inline-flex rounded-full bg-brand/10 px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-brand-deep;
+  }
+
+  .page-title {
+    @apply font-display text-4xl leading-tight md:text-5xl;
+  }
+
+  .table {
+    @apply w-full border-collapse;
+  }
+
+  .table th,
+  .table td {
+    @apply border-b border-black/10 px-3 py-3 text-left;
+  }
+
+  .small {
+    @apply text-sm text-slate-600;
+  }
+
+  .card {
+    border: 1px solid var(--color-line);
+    background: rgb(255 255 255 / 0.8);
+    backdrop-filter: blur(12px);
+    border-radius: var(--radius-shell);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .section {
+    @apply p-8;
+  }
+
+  .container {
+    margin-inline: auto;
+    width: min(1240px, calc(100% - 48px));
+  }
+
+  .stack {
+    @apply grid gap-4;
+  }
+
+  .product-grid {
+    @apply grid gap-5;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  .metric-grid {
+    @apply grid gap-4 md:grid-cols-2 xl:grid-cols-4;
+  }
+
+  .metric {
+    @apply p-6;
+  }
+
+  .filters {
+    @apply mb-6 flex flex-wrap gap-3 p-4;
+  }
+
+  .filters input,
+  .filters select,
+  .form-field input,
+  .form-field textarea,
+  .form-field select {
+    @apply w-full rounded-2xl border border-black/10 bg-white/75 px-4 py-3 outline-none transition focus:border-brand;
+  }
+
+  .form-grid {
+    @apply grid gap-4;
+  }
+
+  .form-field {
+    @apply grid gap-2;
+  }
+
+  .page-section {
+    @apply py-6 pb-12;
+  }
+
+  .rich-content {
+    @apply max-w-none leading-7 text-slate-700;
+  }
+
+  .rich-content h1,
+  .rich-content h2,
+  .rich-content h3,
+  .rich-content h4,
+  .rich-content h5,
+  .rich-content h6 {
+    color: var(--color-ink);
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .rich-content h1 {
+    margin: 1.25em 0 0.6em;
+    font-size: clamp(2rem, 4vw, 2.75rem);
+  }
+
+  .rich-content h2 {
+    margin: 1.15em 0 0.55em;
+    font-size: clamp(1.65rem, 3vw, 2.2rem);
+  }
+
+  .rich-content h3 {
+    margin: 1.05em 0 0.5em;
+    font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+  }
+
+  .rich-content h4,
+  .rich-content h5,
+  .rich-content h6 {
+    margin: 1em 0 0.45em;
+    font-size: 1.05rem;
+  }
+
+  .rich-content p,
+  .rich-content li,
+  .rich-content blockquote {
+    white-space: break-spaces;
+  }
+
+  .rich-content p {
+    margin: 0 0 1rem;
+  }
+
+  .rich-content p:empty::before {
+    content: "\00a0";
+  }
+
+  .rich-content ul,
+  .rich-content ol {
+    margin: 0 0 1rem 1.5rem;
+    padding-left: 0.5rem;
+  }
+
+  .rich-content ul {
+    list-style: disc;
+  }
+
+  .rich-content ol {
+    list-style: decimal;
+  }
+
+  .rich-content li + li {
+    margin-top: 0.35rem;
+  }
+
+  .rich-content blockquote {
+    margin: 1.25rem 0;
+    border-left: 3px solid rgba(16, 32, 26, 0.14);
+    padding-left: 1rem;
+    color: #475569;
+    font-style: italic;
+  }
+
+  .rich-content pre {
+    margin: 1.25rem 0;
+    overflow-x: auto;
+    border-radius: 18px;
+    background: #17212b;
+    padding: 1rem 1.125rem;
+    color: #e5eef7;
+  }
+
+  .rich-content code {
+    border-radius: 0.35rem;
+    background: rgba(15, 23, 42, 0.08);
+    padding: 0.12rem 0.35rem;
+    font-size: 0.92em;
+  }
+
+  .rich-content pre code {
+    background: transparent;
+    padding: 0;
+  }
+
+  .rich-content a {
+    color: #c07a34;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .rich-content hr {
+    margin: 1.5rem 0;
+    border: 0;
+    border-top: 1px solid rgba(16, 32, 26, 0.1);
+  }
+
+  .split {
+    @apply grid gap-6;
+  }
+
+  .surface-panel {
+    border: 1px solid var(--color-line);
+    border-radius: calc(var(--radius-shell) + 4px);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.82)),
+      linear-gradient(135deg, rgba(217, 119, 6, 0.03), rgba(15, 118, 110, 0.05));
+    box-shadow: var(--shadow-soft);
+  }
+
+  .storefront-grid {
+    @apply grid gap-5;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  }
+
+  .page-hero {
+    @apply relative overflow-hidden px-6 py-8 md:px-10 md:py-12;
+  }
+
+  .page-hero::before {
+    content: "";
+    position: absolute;
+    inset: auto -60px -120px auto;
+    width: 260px;
+    height: 260px;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(15, 118, 110, 0.14), transparent 70%);
+    pointer-events: none;
+  }
+
+  .page-hero::after {
+    content: "";
+    position: absolute;
+    inset: -80px auto auto -50px;
+    width: 220px;
+    height: 220px;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(217, 119, 6, 0.1), transparent 70%);
+    pointer-events: none;
+  }
+
+  .section-heading {
+    @apply flex flex-col justify-between gap-3 md:flex-row md:items-end;
+  }
+
+  .stat-chip {
+    @apply rounded-[22px] border border-black/8 bg-white/70 px-4 py-4;
+  }
+
+  .detail-list {
+    @apply grid gap-3 text-sm text-slate-600;
+  }
+
+  .detail-list div {
+    @apply flex items-center justify-between gap-4 rounded-2xl border border-black/6 bg-white/65 px-4 py-3;
+  }
+
+  .quantity-pill {
+    @apply inline-flex items-center gap-3 rounded-full border border-black/10 bg-white px-2 py-2;
+  }
+
+  .quantity-pill button {
+    @apply h-9 w-9 rounded-full border border-black/10 bg-sand text-lg leading-none transition hover:bg-mist;
+  }
+
+  .quantity-pill span {
+    @apply min-w-8 text-center text-sm font-semibold;
+  }
+
+  .soft-link {
+    @apply text-sm text-slate-600 underline-offset-4 transition hover:text-ink hover:underline;
+  }
+
+  .catalog-sidebar {
+    @apply grid gap-4;
+  }
+
+  .catalog-layout {
+    @apply grid gap-6;
+  }
+
+  .checkout-layout {
+    @apply grid gap-6 lg:grid-cols-[1.1fr_0.9fr];
+  }
+
+  .hero-metrics {
+    @apply grid gap-4 sm:grid-cols-3;
+  }
+
+  .checkout-summary-row {
+    @apply flex items-center justify-between gap-4 text-sm text-slate-600;
+  }
+
+  .mini-label {
+    @apply text-[10px] uppercase tracking-[0.22em] text-slate-500;
+  }
+
+  .etsy-home {
+    @apply grid gap-10;
+  }
+
+  .etsy-section {
+    @apply grid gap-4;
+  }
+
+  .etsy-promo-grid {
+    @apply grid gap-4;
+  }
+
+  .etsy-hero-card {
+    @apply relative overflow-hidden rounded-[30px] p-8;
+    background: linear-gradient(135deg, #dce9f7 0%, #cfdcf0 100%);
+  }
+
+  .etsy-hero-card.warm {
+    background: linear-gradient(135deg, #d9cab7 0%, #9f7f66 100%);
+    color: white;
+  }
+
+  .etsy-hero-card.soft {
+    background: linear-gradient(135deg, #faefe2 0%, #f3dcc7 100%);
+  }
+
+  .etsy-grid-4 {
+    @apply grid gap-4;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  }
+
+  .etsy-grid-3 {
+    @apply grid gap-4;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  .etsy-card {
+    @apply block overflow-hidden rounded-[24px] bg-white/88 transition hover:-translate-y-0.5 hover:shadow-lg;
+    border: 1px solid rgba(16, 32, 26, 0.08);
+  }
+
+  .etsy-card-image {
+    @apply aspect-[1.1/1] overflow-hidden bg-mist;
+  }
+
+  .etsy-card-image img {
+    @apply h-full w-full object-cover;
+  }
+
+  .etsy-card-body {
+    @apply p-4;
+  }
+
+  .etsy-card-title {
+    @apply line-clamp-2 text-sm font-semibold leading-5 text-ink;
+  }
+
+  .etsy-card-meta {
+    @apply mt-2 text-xs text-slate-500;
+  }
+
+  .etsy-card-price {
+    @apply mt-2 text-sm font-bold text-ink;
+  }
+
+  .etsy-category-pills {
+    @apply flex flex-wrap gap-3;
+  }
+
+  .etsy-category-pill {
+    @apply inline-flex items-center gap-3 rounded-full border border-black/8 bg-white/90 px-4 py-3 text-sm transition hover:bg-white;
+  }
+
+  .etsy-category-icon {
+    @apply flex h-10 w-10 items-center justify-center rounded-full bg-[#f4ede4] font-display text-sm font-bold text-ink;
+  }
+
+  .etsy-mini-banner {
+    @apply rounded-[24px] bg-white/84 p-5;
+    border: 1px solid rgba(16, 32, 26, 0.08);
+  }
+
+  .etsy-store-row {
+    @apply grid gap-4;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+
+  .etsy-store-card {
+    @apply rounded-[26px] bg-white/86 p-5;
+    border: 1px solid rgba(16, 32, 26, 0.08);
+  }
+
+  .etsy-story-grid {
+    @apply grid gap-4;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  }
+
+  .etsy-story-card {
+    @apply rounded-[26px] bg-white/84 p-6 text-center;
+    border: 1px solid rgba(16, 32, 26, 0.08);
+  }
+
+  .chat-shell {
+    @apply overflow-hidden rounded-[30px] border border-black/8 bg-white/75;
+    box-shadow: 0 24px 60px rgba(16, 32, 26, 0.12);
+    backdrop-filter: blur(14px);
+  }
+
+  .chat-layout {
+    @apply grid min-h-[72vh];
+  }
+
+  .chat-sidebar {
+    @apply border-b border-black/8;
+    background: linear-gradient(180deg, rgba(248, 244, 238, 0.95), rgba(255, 255, 255, 0.88));
+  }
+
+  .chat-sidebar-head {
+    @apply sticky top-0 z-10 border-b border-black/8 bg-white/85 p-5 backdrop-blur;
+  }
+
+  .chat-sidebar-list {
+    @apply grid gap-2 p-3;
+  }
+
+  .chat-thread-button {
+    @apply rounded-[22px] border border-transparent px-4 py-3 text-left transition;
+  }
+
+  .chat-thread-button.active {
+    @apply border-black/10 bg-white shadow-sm;
+  }
+
+  .chat-thread-button.inactive {
+    @apply bg-transparent hover:border-black/8 hover:bg-white/60;
+  }
+
+  .chat-main {
+    @apply grid min-h-[60vh];
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(244, 239, 231, 0.75));
+  }
+
+  .chat-main-head {
+    @apply sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-black/8 bg-white/82 px-5 py-4 backdrop-blur;
+  }
+
+  .chat-scroll {
+    @apply grid content-start gap-3 overflow-y-auto px-4 py-5 md:px-6;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(16, 32, 26, 0.06) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+
+  .chat-bubble {
+    @apply max-w-[86%] rounded-[24px] px-4 py-3 text-sm shadow-sm md:max-w-[72%];
+  }
+
+  .chat-bubble.mine {
+    @apply ml-auto rounded-br-md bg-ink text-white;
+  }
+
+  .chat-bubble.theirs {
+    @apply rounded-bl-md border border-black/8 bg-white/88 text-slate-700;
+  }
+
+  .chat-composer {
+    @apply sticky bottom-0 border-t border-black/8 bg-white/88 p-4 backdrop-blur md:p-5;
+  }
+
+  .chat-composer-row {
+    @apply flex items-end gap-3;
+  }
+
+  .chat-composer-row .field-input {
+    @apply min-h-[56px] rounded-[24px];
+  }
+
+  .chat-empty {
+    @apply rounded-[24px] border border-black/8 bg-white/72 p-5 text-sm text-slate-600;
+  }
+
+  .product-card-dark {
+    @apply rounded-[30px] bg-[#151515] p-[8px] text-white transition duration-300 hover:-translate-y-1;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.22);
+  }
+
+  .product-card-media {
+    @apply relative block aspect-square overflow-hidden rounded-[26px] bg-[#f5f5f2];
+  }
+
+  .product-card-heart {
+    @apply absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full text-[#121212] transition;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 10px 24px rgba(17, 17, 17, 0.12);
+  }
+
+  .product-card-dark:hover .product-card-heart {
+    transform: scale(1.04);
+  }
+
+  @media (min-width: 1024px) {
+    .split {
+      grid-template-columns: 1.1fr 0.9fr;
+    }
+
+    .catalog-layout {
+      grid-template-columns: 280px minmax(0, 1fr);
+    }
+
+    .etsy-promo-grid {
+      grid-template-columns: 1.3fr 1fr 1fr;
+    }
+
+    .chat-layout {
+      grid-template-columns: 340px minmax(0, 1fr);
+    }
+
+    .chat-sidebar {
+      @apply border-b-0 border-r;
+    }
+  }
+}

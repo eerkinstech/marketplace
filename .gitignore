@@ -1,0 +1,14 @@
+node_modules/
+client/node_modules/
+server/node_modules/
+.next/
+client/.next/
+server/.next/
+dist/
+build/
+.env
+.env.*
+!.env.example
+*.log
+.npm-cache/
+.codex-tmp/
