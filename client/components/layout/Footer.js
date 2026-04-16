@@ -42,6 +42,10 @@ function FooterIcon({ type, className = "h-5 w-5" }) {
   if (type === "mail") return <svg {...commonProps}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m4 7 8 6 8-6" /></svg>;
   if (type === "shield") return <svg {...commonProps}><path d="M12 3l7 3v5c0 4.5-2.5 7.5-7 10-4.5-2.5-7-5.5-7-10V6l7-3Z" /><path d="m9.5 12 1.7 1.7 3.8-4" /></svg>;
   if (type === "truck") return <svg {...commonProps}><path d="M3 7h11v8H3zM14 10h3l3 3v2h-6z" /><circle cx="7.5" cy="18" r="1.5" /><circle cx="17.5" cy="18" r="1.5" /></svg>;
+  if (type === "refund") return <svg {...commonProps}><path d="M8 7h7l4 4v6a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z" /><path d="M15 7v4h4" /><path d="M10 12a3.5 3.5 0 1 0 3.5 3.5" /><path d="m10 13-1.5 1.5L10 16" /></svg>;
+  if (type === "support") return <svg {...commonProps}><path d="M4 13v-1a8 8 0 0 1 16 0v1" /><rect x="3" y="12" width="4" height="7" rx="2" /><rect x="17" y="12" width="4" height="7" rx="2" /><path d="M7 19a3 3 0 0 0 3 3h4" /></svg>;
+  if (type === "selection") return <svg {...commonProps}><rect x="4" y="5" width="8" height="6" rx="1.5" /><rect x="12" y="9" width="8" height="6" rx="1.5" /><path d="M8 14v5M16 4v5" /><path d="M6 19h4M14 9h4" /></svg>;
+  if (type === "bag") return <svg {...commonProps}><path d="M7 8V7a5 5 0 0 1 10 0v1" /><path d="M5 8h14l-1 11H6L5 8Z" /><path d="M10 12a2 2 0 0 0 4 0" /></svg>;
   return null;
 }
 
@@ -86,6 +90,29 @@ export function Footer() {
     return nextLinks.length ? nextLinks.slice(0, 6) : businessLinks;
   }, [policiesMenu]);
 
+  const serviceCards = [
+    {
+      icon: "selection",
+      title: "Unbeatable Selection",
+      href: "/products"
+    },
+    {
+      icon: "support",
+      title: "Expert Customer Service",
+      href: "/support"
+    },
+    {
+      icon: "truck",
+      title: "Fast & Free Shipping Over $35*",
+      href: "/policy/shipping"
+    },
+    {
+      icon: "bag",
+      title: "Amazing Value Every Day",
+      href: "/products?sort=popular"
+    }
+  ];
+
   async function handleSubscribe(event) {
     event.preventDefault();
 
@@ -99,9 +126,26 @@ export function Footer() {
   }
 
   return (
-    <footer className="mt-16 border-t border-black/8 bg-[linear-gradient(180deg,#f8f3ec_0%,#f3ede5_100%)]">
-      <div className="shell-container py-10">
-        <section className="rounded-[30px] border border-black/8 bg-ink px-6 py-8 text-white shadow-[0_20px_50px_rgba(16,32,26,0.18)] sm:px-8 lg:px-10">
+    <footer className="mt-5 border-t border-black/8" style={{ background: "linear-gradient(180deg, color-mix(in srgb, var(--background) 84%, var(--white)) 0%, color-mix(in srgb, var(--background) 92%, var(--secondary)) 100%)" }}>
+      <div className="shell-container ">
+        <section className="grid gap-4 border-b py-5 border-black/8  md:grid-cols-2 xl:grid-cols-4">
+          {serviceCards.map((card) => (
+            <Link
+              key={card.title}
+              href={card.href}
+              className="flex min-h-[110px] flex-col items-center justify-center rounded-[18px] px-5 py-6 text-center transition hover:bg-black/[0.03]"
+            >
+              <div className="flex h-10 w-10 items-center justify-center text-[var(--primary)]">
+                <FooterIcon type={card.icon} className="h-7 w-7" />
+              </div>
+              <h3 className="mt-3 max-w-[17ch] text-[clamp(1.2rem,1.35vw,1.55rem)] font-semibold leading-[1.15] tracking-[-0.02em] text-[var(--black)]">
+                {card.title}
+              </h3>
+            </Link>
+          ))}
+        </section>
+
+        <section className="mt-8 rounded-[30px] border border-black/8 bg-ink px-6 py-8 text-white shadow-[0_20px_50px_rgba(16,32,26,0.18)] sm:px-8 lg:px-10">
           <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-white/75">
@@ -191,9 +235,10 @@ export function Footer() {
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="Email address"
                 required
-                className="field-input h-12 rounded-[16px] border border-black/10 bg-[#fcfaf7]"
+                className="field-input h-12 rounded-[16px] border border-black/10"
+                style={{ background: "color-mix(in srgb, var(--white) 82%, var(--background))" }}
               />
-              <button type="submit" className="inline-flex h-12 items-center justify-center rounded-[16px] bg-[#c07a34] px-5 text-sm font-semibold text-white transition hover:bg-[#a96b2d]">
+              <button type="submit" className="inline-flex h-12 items-center justify-center rounded-[16px] px-5 text-sm font-semibold text-white transition" style={{ background: "var(--accent)" }}>
                 Subscribe
               </button>
             </form>

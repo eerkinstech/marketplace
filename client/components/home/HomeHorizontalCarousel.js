@@ -19,14 +19,23 @@ function ChevronIcon({ direction = "left" }) {
   );
 }
 
-export function HomeHorizontalCarousel({ children, ariaLabel }) {
+export function HomeHorizontalCarousel({ children, ariaLabel, stepMode = "viewport", itemSelector = "[data-carousel-item]" }) {
   const trackRef = useRef(null);
 
   function scrollByAmount(direction) {
     const track = trackRef.current;
     if (!track) return;
 
-    const amount = Math.max(track.clientWidth * 0.82, 240);
+    let amount = Math.max(track.clientWidth * 0.82, 240);
+    if (stepMode === "item") {
+      const firstItem = track.querySelector(itemSelector);
+      if (firstItem) {
+        const itemRect = firstItem.getBoundingClientRect();
+        const trackStyle = window.getComputedStyle(track);
+        const gap = Number.parseFloat(trackStyle.columnGap || trackStyle.gap || "0") || 0;
+        amount = itemRect.width + gap;
+      }
+    }
     track.scrollBy({
       left: direction === "left" ? -amount : amount,
       behavior: "smooth"
@@ -35,12 +44,12 @@ export function HomeHorizontalCarousel({ children, ariaLabel }) {
 
   return (
     <div className="relative">
-      <div className="mb-3 hidden justify-end gap-2 md:flex">
+      <div className="absolute right-0 top-[-3.9rem] z-10 hidden items-center gap-2 md:flex">
         <button
           type="button"
           onClick={() => scrollByAmount("left")}
-          className="flex h-10 w-10 items-center justify-center rounded-full border text-[var(--home-accent-strong)] transition hover:-translate-y-0.5"
-          style={{ borderColor: "var(--home-section-line)", background: "var(--home-card-bg)" }}
+          className="flex h-10 w-10 items-center justify-center rounded-full border transition hover:-translate-y-0.5"
+          style={{ borderColor: "var(--color-line)", background: "var(--white)", color: "var(--primary)" }}
           aria-label={`Scroll ${ariaLabel} left`}
         >
           <ChevronIcon direction="left" />
@@ -48,8 +57,8 @@ export function HomeHorizontalCarousel({ children, ariaLabel }) {
         <button
           type="button"
           onClick={() => scrollByAmount("right")}
-          className="flex h-10 w-10 items-center justify-center rounded-full border text-[var(--home-accent-strong)] transition hover:-translate-y-0.5"
-          style={{ borderColor: "var(--home-section-line)", background: "var(--home-card-bg)" }}
+          className="flex h-10 w-10 items-center justify-center rounded-full border transition hover:-translate-y-0.5"
+          style={{ borderColor: "var(--color-line)", background: "var(--white)", color: "var(--primary)" }}
           aria-label={`Scroll ${ariaLabel} right`}
         >
           <ChevronIcon direction="right" />
@@ -58,7 +67,7 @@ export function HomeHorizontalCarousel({ children, ariaLabel }) {
 
       <div
         ref={trackRef}
-        className="flex gap-3 overflow-x-auto pb-2"
+        className="flex gap-2 overflow-x-auto pb-2 snap-x snap-mandatory"
         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
       >
         {children}

@@ -284,7 +284,8 @@ export default function ProductDetailClient({ product }) {
                         key={`${image || "empty"}-${index}`}
                         type="button"
                         onClick={() => image && setSelectedImage(image)}
-                        className={`h-[88px] w-[88px] shrink-0 overflow-hidden rounded-[20px] border bg-[#f6f1e8] ${isActive ? "border-[#c07a34]" : "border-black/8 hover:border-[#c07a34]/50"}`}
+                        className={`h-[88px] w-[88px] shrink-0 overflow-hidden rounded-[20px] border ${isActive ? "border-[var(--accent)]" : "border-black/8 hover:border-[color-mix(in_srgb,var(--accent)_50%,transparent)]"}`}
+                        style={{ background: "color-mix(in srgb, var(--background) 82%, var(--white))" }}
                       >
                         {image ? (
                           <img
@@ -300,9 +301,9 @@ export default function ProductDetailClient({ product }) {
                   })}
                 </div>
 
-                <div className="order-1 overflow-hidden rounded-[24px] border border-black/8 bg-[#f5efe5] md:order-2">
+                <div className="order-1 overflow-hidden rounded-[24px] border border-black/8 md:order-2" style={{ background: "color-mix(in srgb, var(--background) 78%, var(--white))" }}>
                   <div className="aspect-square w-full">
-                    <div className="flex h-full w-full items-center justify-center rounded-[20px] bg-[#efe7dc]">
+                    <div className="flex h-full w-full items-center justify-center rounded-[20px]" style={{ background: "color-mix(in srgb, var(--background) 72%, var(--secondary))" }}>
                       {activeImage ? (
                         <img
                           src={activeImage}
@@ -322,14 +323,14 @@ export default function ProductDetailClient({ product }) {
           <aside className="rounded-[28px] border border-black/8 bg-white/95 p-5 shadow-[0_16px_40px_rgba(16,32,26,0.06)] sm:p-6">
             <div className="flex flex-wrap items-center gap-2">
               {product?.category?.name ? <span className="badge">{product.category.name}</span> : null}
-              {discount ? <span className="badge bg-[#c07a34]/10 text-[#c07a34]">{discount}% off</span> : null}
+              {discount ? <span className="badge" style={{ background: "color-mix(in srgb, var(--accent) 10%, transparent)", color: "var(--accent)" }}>{discount}% off</span> : null}
             </div>
 
             {selectedSku ? <div className="mt-4 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">SKU: {selectedSku}</div> : null}
             <h1 className="mt-3 font-display text-[2rem] leading-[1.02] text-ink sm:text-[2.4rem]">{product?.name}</h1>
 
             <div className="mt-4 flex items-end gap-3">
-              <div className="text-[2.15rem] font-black leading-none text-[#c07a34]">{formatCurrency(selectedPrice)}</div>
+              <div className="text-[2.15rem] font-black leading-none" style={{ color: "var(--accent)" }}>{formatCurrency(selectedPrice)}</div>
               {product?.compareAtPrice ? (
                 <div className="text-base text-slate-400 line-through">{formatCurrency(product.compareAtPrice)}</div>
               ) : null}
@@ -374,7 +375,7 @@ export default function ProductDetailClient({ product }) {
               </div>
             ) : null}
 
-            <div className="mt-5 rounded-[20px] border border-black/8 bg-[#fcfaf7] p-4">
+            <div className="mt-5 rounded-[20px] border border-black/8 p-4" style={{ background: "color-mix(in srgb, var(--white) 82%, var(--background))" }}>
               <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Summary</div>
               <div className="mt-3 grid gap-3 text-sm">
                 <div className="flex items-start justify-between gap-4">
@@ -415,7 +416,8 @@ export default function ProductDetailClient({ product }) {
                 selectedImage={activeImage}
                 disabled={selectedStock <= 0}
                 quantity={quantity}
-                className="h-[56px] w-full rounded-[16px] bg-[#c07a34] px-6 text-base font-bold hover:bg-[#a96b2d]"
+                className="h-[56px] w-full rounded-[16px] px-6 text-base font-bold text-white"
+                style={{ background: "var(--accent)" }}
               />
             </div>
 
@@ -436,7 +438,8 @@ export default function ProductDetailClient({ product }) {
               <button
                 type="button"
                 onClick={handleWishlist}
-                className={`h-[48px] rounded-[16px] border text-sm font-bold transition ${isInWishlist ? "border-[#c07a34] bg-[#fff4e8] text-[#c07a34]" : "border-black/10 bg-white text-ink hover:bg-[#faf6f0]"}`}
+                className={`h-[48px] rounded-[16px] border text-sm font-bold transition ${isInWishlist ? "border-[var(--accent)] text-[var(--accent)]" : "border-black/10 bg-white text-ink hover:bg-[color-mix(in_srgb,var(--background)_78%,var(--white))]"}`}
+                style={isInWishlist ? { background: "color-mix(in srgb, var(--accent) 10%, var(--white))" } : undefined}
               >
                 {isInWishlist ? "Saved variant" : "Save variant"}
               </button>

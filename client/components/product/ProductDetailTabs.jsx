@@ -55,13 +55,13 @@ export function ProductDetailTabs({ product }) {
               ${
                 activeTab === tab.id
                   ? "text-white"
-                  : "text-slate-600 hover:bg-gradient-to-b hover:from-[#faf6f0] hover:to-transparent hover:text-slate-900"
+                  : "text-slate-600 hover:bg-gradient-to-b hover:from-[color-mix(in_srgb,var(--background)_72%,var(--white))] hover:to-transparent hover:text-slate-900"
               }
             `}
           >
             {/* Active tab background - positioned absolutely */}
             {activeTab === tab.id && (
-              <span className="absolute inset-0 rounded-t-[28px] bg-gradient-to-br from-[#d4925f] to-[#b86f2e] shadow-[inset_0_1px_2px_rgba(255,255,255,0.3)]" />
+              <span className="absolute inset-0 rounded-t-[28px] shadow-[inset_0_1px_2px_rgba(255,255,255,0.3)]" style={{ background: "linear-gradient(135deg, color-mix(in srgb, var(--accent) 72%, var(--white)) 0%, color-mix(in srgb, var(--accent) 78%, var(--black)) 100%)" }} />
             )}
             
             {/* Tab content */}
@@ -128,17 +128,19 @@ export function ProductDetailTabs({ product }) {
                   {benefits.map((benefit, index) => (
                     <div
                       key={`${benefit}-${index}`}
-                      className="group relative overflow-hidden rounded-[18px] border border-black/6 bg-gradient-to-br from-[#fcfaf7] to-[#f8f4ee] px-5 py-4 shadow-sm transition-all duration-300 hover:border-[#c07a34]/20 hover:shadow-md"
+                      className="group relative overflow-hidden rounded-[18px] border border-black/6 px-5 py-4 shadow-sm transition-all duration-300 hover:shadow-md"
                       style={{
+                        background: "linear-gradient(135deg, color-mix(in srgb, var(--white) 84%, var(--background)) 0%, color-mix(in srgb, var(--background) 88%, var(--secondary)) 100%)",
+                        borderColor: "color-mix(in srgb, var(--accent) 20%, transparent)",
                         animationDelay: `${index * 50}ms`,
                         animation: "slideInUp 0.5s ease-out both",
                       }}
                     >
                       {/* Decorative accent */}
-                      <div className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-[#c07a34] to-[#d4925f] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                      <div className="absolute left-0 top-0 h-full w-1 opacity-0 transition-opacity duration-300 group-hover:opacity-100" style={{ background: "linear-gradient(180deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 72%, var(--white)) 100%)" }} />
                       
                       {/* Icon */}
-                      <div className="mb-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-[#c07a34]/10 to-[#d4925f]/10 text-[#c07a34]">
+                      <div className="mb-2 inline-flex h-6 w-6 items-center justify-center rounded-full" style={{ background: "color-mix(in srgb, var(--accent) 10%, transparent)", color: "var(--accent)" }}>
                         <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>

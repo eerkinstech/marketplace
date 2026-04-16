@@ -29,6 +29,13 @@ const featuredCategoryLinks = [
   { href: "/store/demo", label: "Featured stores" }
 ];
 
+const desktopBrowseFallbackHeadings = [
+  "Shop the category",
+  "Popular picks",
+  "Featured collections",
+  "Trending now"
+];
+
 function resolveMenuHref(item) {
   return item?.url || item?.href || item?.link || "#";
 }
@@ -77,6 +84,106 @@ function HeaderIcon({ type, className = "h-4 w-4" }) {
   return null;
 }
 
+function chunkItems(items = [], chunkSize = 6) {
+  const chunks = [];
+  for (let index = 0; index < items.length; index += chunkSize) {
+    chunks.push(items.slice(index, index + chunkSize));
+  }
+  return chunks;
+}
+
+function toDesktopBrowseTabs(browseLinks, categories) {
+  if (browseLinks.length) {
+    return browseLinks.map((item, index) => {
+      const submenu = Array.isArray(item.submenu) ? item.submenu : [];
+      const categoryMatch = categories.find((category) => slugifyForMatch(category.name) === slugifyForMatch(item.label));
+      const columns = submenu.length
+        ? submenu.slice(0, 4).map((group, groupIndex) => ({
+          id: group.id || `${item.label}-group-${groupIndex}`,
+          heading: group.label,
+          href: resolveMenuHref(group),
+          items: (Array.isArray(group.submenu) ? group.submenu : []).map((child) => ({
+            id: child.id || `${group.label}-${child.label}-${groupIndex}`,
+            label: child.label || "Untitled",
+            href: resolveMenuHref(child),
+            highlight: /sale|featured|new|trending/i.test(child.label || "")
+          }))
+        }))
+        : chunkItems(
+          featuredCategoryLinks.map((link, linkIndex) => ({
+            id: `${item.label}-featured-${linkIndex}`,
+            label: `${item.label} ${link.label}`,
+            href: `${item.href}${item.href.includes("?") ? "&" : "?"}from=${linkIndex + 1}`,
+            highlight: linkIndex === 0
+          })),
+          2
+        ).map((group, groupIndex) => ({
+          id: `${item.label}-auto-${groupIndex}`,
+          heading: desktopBrowseFallbackHeadings[groupIndex] || `Explore ${item.label}`,
+          href: item.href,
+          items: group
+        }));
+
+      return {
+        id: item.id || `${item.label}-${index}`,
+        label: item.label,
+        href: item.href,
+        columns,
+        promo: {
+          title: item.label,
+          subtitle: categoryMatch?.description || `Explore standout picks and fresh arrivals in ${item.label}.`,
+          href: item.href,
+          image: categoryMatch?.image || categories[index % Math.max(categories.length, 1)]?.image || ""
+        }
+      };
+    });
+  }
+
+  return categories.slice(0, 10).map((category, index) => {
+    const generatedItems = [
+      `${category.name} best sellers`,
+      `${category.name} new arrivals`,
+      `${category.name} top rated`,
+      `${category.name} essentials`,
+      `${category.name} gift ideas`,
+      `${category.name} sale`
+    ];
+
+    const columns = chunkItems(generatedItems, 2).map((group, groupIndex) => ({
+      id: `${category.slug}-column-${groupIndex}`,
+      heading: desktopBrowseFallbackHeadings[groupIndex] || category.name,
+      href: `/category/${category.slug}`,
+      items: group.map((label, itemIndex) => ({
+        id: `${category.slug}-${groupIndex}-${itemIndex}`,
+        label,
+        href: `/products?category=${category.slug}`,
+        highlight: /sale|new/i.test(label)
+      }))
+    }));
+
+    return {
+      id: category._id || category.slug || `category-${index}`,
+      label: category.name,
+      href: `/category/${category.slug}`,
+      columns,
+      promo: {
+        title: category.name,
+        subtitle: category.description,
+        href: `/category/${category.slug}`,
+        image: category.image || ""
+      }
+    };
+  });
+}
+
+function slugifyForMatch(value = "") {
+  return String(value)
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function BrowseTree({ items, mobile = false, onNavigate = null }) {
   if (!items.length) return null;
 
@@ -85,9 +192,10 @@ function BrowseTree({ items, mobile = false, onNavigate = null }) {
       {items.map((item) => (
         <div
           key={item.id || `${item.label}-${item.href}`}
-          className={`rounded-[18px] border border-black/6 bg-[#fcfaf7] ${mobile ? "p-4" : "p-4"}`}
+          className={`rounded-[18px] border border-black/6 ${mobile ? "p-4" : "p-4"}`}
+          style={{ background: "color-mix(in srgb, var(--white) 82%, var(--background))" }}
         >
-          <Link href={item.href} onClick={onNavigate} className="text-sm font-semibold text-ink transition hover:text-[#c07a34]">
+          <Link href={item.href} onClick={onNavigate} className="text-sm font-semibold text-ink transition hover:text-[var(--accent)]">
             {item.label}
           </Link>
           {item.submenu?.length ? (
@@ -116,6 +224,7 @@ export function Header() {
   const [query, setQuery] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [megaOpen, setMegaOpen] = useState(false);
+  const [activeBrowseIndex, setActiveBrowseIndex] = useState(0);
   const [voiceListening, setVoiceListening] = useState(false);
   const [categories, setCategories] = useState([]);
   const [cartCount, setCartCount] = useState(0);
@@ -132,6 +241,7 @@ export function Header() {
   const topBarLinks = useMemo(() => normalizeMenuItems(topBarMenu, topBarFallbackLinks), [topBarMenu]);
   const navLinks = useMemo(() => normalizeMenuItems(mainNavMenu, primaryLinks), [mainNavMenu]);
   const browseLinks = useMemo(() => normalizeMenuItems(browseMenu), [browseMenu]);
+  const desktopBrowseTabs = useMemo(() => toDesktopBrowseTabs(browseLinks, categories), [browseLinks, categories]);
 
   function getCartCount() {
     return cartStore.getItems().reduce((sum, item) => sum + Number(item?.quantity || 0), 0);
@@ -247,7 +357,7 @@ export function Header() {
       try {
         const response = await marketplaceApi.safeGetCategories();
         if (!active) return;
-        setCategories(Array.isArray(response?.data) ? response.data.slice(0, 8) : []);
+        setCategories(Array.isArray(response?.data) ? response.data : []);
       } catch {
         if (active) setCategories([]);
       }
@@ -264,6 +374,16 @@ export function Header() {
     setMegaOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    if (!desktopBrowseTabs.length) {
+      setActiveBrowseIndex(0);
+      return;
+    }
+    if (activeBrowseIndex > desktopBrowseTabs.length - 1) {
+      setActiveBrowseIndex(0);
+    }
+  }, [activeBrowseIndex, desktopBrowseTabs.length]);
+
   const categoryColumns = useMemo(() => {
     const cols = [[], []];
     categories.forEach((category, index) => {
@@ -271,6 +391,8 @@ export function Header() {
     });
     return cols;
   }, [categories]);
+
+  const activeBrowseTab = desktopBrowseTabs[activeBrowseIndex] || desktopBrowseTabs[0] || null;
 
   function submitSearch(event) {
     event.preventDefault();
@@ -304,11 +426,13 @@ export function Header() {
   }
 
   return (
-    <header className="z-30 border-b border-black/8 bg-[#f8f3ec]/92 backdrop-blur-xl">
+    <header className="z-30 border-b border-black/8 backdrop-blur-xl" style={{ background: "color-mix(in srgb, var(--background) 92%, transparent)" }}>
       {flyingBubble ? (
         <div
-          className="pointer-events-none fixed left-0 top-0 z-[80] flex h-8 min-w-8 items-center justify-center rounded-full bg-[#c07a34] px-2 text-xs font-bold text-white shadow-[0_12px_28px_rgba(192,122,52,0.35)] transition-[transform,opacity] duration-700"
+          className="pointer-events-none fixed left-0 top-0 z-[80] flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-xs font-bold text-white transition-[transform,opacity] duration-700"
           style={{
+            background: "var(--accent)",
+            boxShadow: "0 12px 28px color-mix(in srgb, var(--accent) 35%, transparent)",
             transform: bubbleActive
               ? `translate(${flyingBubble.targetX - flyingBubble.x}px, ${flyingBubble.targetY - flyingBubble.y}px) scale(0.78)`
               : "translate(0px, 0px) scale(1)",
@@ -357,7 +481,7 @@ export function Header() {
 
           <form onSubmit={submitSearch} className="hidden xl:block">
             <div className="flex items-center gap-3 rounded-full border border-black/10 bg-white px-3 py-2 shadow-[0_10px_24px_rgba(16,32,26,0.06)]">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#f6efe5] text-slate-500">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full text-slate-500" style={{ background: "color-mix(in srgb, var(--background) 78%, var(--white))" }}>
                 <HeaderIcon type="search" />
               </div>
               <input
@@ -369,12 +493,13 @@ export function Header() {
               <button
                 type="button"
                 onClick={handleVoiceSearch}
-                className={`flex h-10 w-10 items-center justify-center rounded-full transition ${voiceListening ? "bg-[#c07a34] text-white" : "bg-[#f6efe5] text-slate-600 hover:bg-[#eadfce]"}`}
+                className={`flex h-10 w-10 items-center justify-center rounded-full transition ${voiceListening ? "text-white" : "text-slate-600"}`}
+                style={voiceListening ? { background: "var(--accent)" } : { background: "color-mix(in srgb, var(--background) 78%, var(--white))" }}
                 aria-label="Voice search"
               >
                 <HeaderIcon type="mic" />
               </button>
-              <button type="submit" className="rounded-full bg-[#c07a34] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#a96b2d]">
+              <button type="submit" className="rounded-full px-5 py-2.5 text-sm font-semibold text-white transition" style={{ background: "var(--accent)" }}>
                 Search
               </button>
             </div>
@@ -386,9 +511,9 @@ export function Header() {
               href="/wishlist"
               className="relative inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-3 pr-5 text-sm font-semibold text-ink transition hover:-translate-y-0.5"
             >
-              <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-[#f6efe5] text-slate-500">
+              <span className="relative flex h-8 w-8 items-center justify-center rounded-full text-slate-500" style={{ background: "color-mix(in srgb, var(--background) 78%, var(--white))" }}>
                 <HeaderIcon type="heart" className="h-4 w-4" />
-                <span className={`absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#c07a34] px-1 text-[10px] font-bold text-white transition ${wishlistBadgePulse ? "scale-115" : "scale-100"}`}>
+                <span className={`absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white transition ${wishlistBadgePulse ? "scale-115" : "scale-100"}`} style={{ background: "var(--accent)" }}>
                   {wishlistCount}
                 </span>
               </span>
@@ -399,9 +524,9 @@ export function Header() {
               href="/cart"
               className="relative inline-flex items-center gap-2 rounded-full border border-black/10 bg-white px-4 py-3 pr-5 text-sm font-semibold text-ink transition hover:-translate-y-0.5"
             >
-              <span className="relative flex h-8 w-8 items-center justify-center rounded-full bg-[#f6efe5] text-slate-500">
+              <span className="relative flex h-8 w-8 items-center justify-center rounded-full text-slate-500" style={{ background: "color-mix(in srgb, var(--background) 78%, var(--white))" }}>
                 <HeaderIcon type="cart" className="h-4 w-4" />
-                <span className={`absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-[#c07a34] px-1 text-[10px] font-bold text-white transition ${cartBadgePulse ? "scale-115" : "scale-100"}`}>
+                <span className={`absolute -right-2 -top-2 flex min-h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white transition ${cartBadgePulse ? "scale-115" : "scale-100"}`} style={{ background: "var(--accent)" }}>
                   {cartCount}
                 </span>
               </span>
@@ -421,89 +546,79 @@ export function Header() {
           </div>
         </div>
 
-        <div className="mt-4 hidden items-center gap-6 xl:flex">
+        <div className="mt-4 hidden items-center gap-3 xl:flex">
           <div className="relative">
             <button
               type="button"
               onClick={() => setMegaOpen((state) => !state)}
-              className={`inline-flex items-center gap-3 rounded-full px-5 py-3 text-sm font-semibold transition ${megaOpen ? "bg-ink text-white" : "border border-black/10 bg-white text-ink hover:bg-white"}`}
+              className={`inline-flex items-center justify-between gap-3 rounded-full px-5 py-3 text-sm font-semibold transition ${megaOpen ? "bg-ink text-white" : "border border-black/10 bg-white text-ink hover:bg-white"}`}
             >
               <HeaderIcon type="grid" className="h-4 w-4" />
-              Categories
+              Shop by Category
               <HeaderIcon type={megaOpen ? "chevron-up" : "chevron-down"} className="h-3.5 w-3.5" />
             </button>
 
-            {megaOpen ? (
-              <div className="absolute left-0 top-[calc(100%+14px)] z-40 w-[760px] overflow-hidden rounded-[28px] border border-black/8 bg-white shadow-[0_20px_60px_rgba(16,32,26,0.12)]">
-                {browseLinks.length ? (
-                  <div className="grid grid-cols-[1.2fr_0.8fr]">
-                    <div className="p-6">
-                      <div className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Browse menu</div>
-                      <BrowseTree items={browseLinks} />
-                    </div>
+            {megaOpen && activeBrowseTab ? (
+              <div className="absolute left-0 top-[calc(100%+14px)] z-40 w-[1215px] overflow-hidden rounded-[30px] border border-black/8 bg-white shadow-[0_24px_70px_rgba(16,32,26,0.14)]">
+                <div className="flex items-center justify-between gap-2 border-b border-black/8 px-8 py-4">
+                  {desktopBrowseTabs.map((tab, index) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveBrowseIndex(index)}
+                      className="relative pb-2 text-[13px] font-semibold transition"
+                      style={{ color: index === activeBrowseIndex ? "var(--primary)" : "var(--text)" }}
+                    >
+                      {tab.label}
+                      <span
+                        className="absolute inset-x-0 bottom-0 h-[3px] rounded-full transition"
+                        style={{
+                          background: "var(--primary)",
+                          opacity: index === activeBrowseIndex ? 1 : 0,
+                          transform: index === activeBrowseIndex ? "scaleX(1)" : "scaleX(0.4)"
+                        }}
+                      />
+                    </button>
+                  ))}
+                </div>
 
-                    <div className="border-l border-black/6 bg-[#f8f3ec] p-6">
-                      <div className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Quick links</div>
-                      <div className="grid gap-3">
-                        {featuredCategoryLinks.map((link) => (
+                <div className="grid grid-cols-5 gap-8 px-4 py-2">
+                  {activeBrowseTab.columns.map((column) => (
+                    <div key={column.id} className="min-w-0.5">
+                      <Link
+                        href={column.href}
+                        className="inline-flex items-center gap-2 text-[13px] font-bold"
+                        style={{ color: "var(--primary)" }}
+                      >
+                        <span>{column.heading}</span>
+                        <span aria-hidden="true">›</span>
+                      </Link>
+
+                      <div className="mt-1 grid gap-1">
+                        {column.items.map((item) => (
                           <Link
-                            key={link.href}
-                            href={link.href}
-                            className="rounded-[18px] bg-white px-4 py-3 text-sm font-semibold text-ink transition hover:-translate-y-0.5"
+                            key={item.id}
+                            href={item.href}
+                            className="text-[13px] leading-7 transition hover:translate-x-0.5"
+                            style={{ color: item.highlight ? "color-mix(in srgb, var(--accent) 80%, var(--text))" : "var(--text)" }}
                           >
-                            {link.label}
+                            {item.label}
                           </Link>
                         ))}
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-[1.2fr_0.8fr]">
-                    <div className="p-6">
-                      <div className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Browse categories</div>
-                      <div className="grid grid-cols-2 gap-x-8 gap-y-3">
-                        {categoryColumns.map((column, index) => (
-                          <div key={`col-${index}`} className="grid gap-3">
-                            {column.map((category) => (
-                              <Link
-                                key={category._id || category.slug}
-                                href={`/category/${category.slug}`}
-                                className="rounded-[18px] border border-black/6 bg-[#fcfaf7] px-4 py-3 text-sm font-semibold text-ink transition hover:border-[#c07a34]/35 hover:bg-white"
-                              >
-                                {category.name}
-                              </Link>
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="border-l border-black/6 bg-[#f8f3ec] p-6">
-                      <div className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Quick links</div>
-                      <div className="grid gap-3">
-                        {featuredCategoryLinks.map((link) => (
-                          <Link
-                            key={link.href}
-                            href={link.href}
-                            className="rounded-[18px] bg-white px-4 py-3 text-sm font-semibold text-ink transition hover:-translate-y-0.5"
-                          >
-                            {link.label}
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
+                  ))}
+                </div>
               </div>
             ) : null}
           </div>
 
-          <nav className="flex items-center gap-2">
+          <nav className="flex items-center gap-3">
             {navLinks.map((link) => (
               <Link
                 key={`${link.href}-${link.label}`}
                 href={link.href}
-                className={`rounded-full px-4 py-3 text-sm font-semibold transition ${isLinkActive(pathname, link.href) ? "bg-white text-ink shadow-sm" : "text-slate-700 hover:bg-white hover:text-ink"}`}
+                className={`rounded-full border border-black/10 px-4 py-3 text-sm font-semibold transition ${isLinkActive(pathname, link.href) ? "bg-white text-ink shadow-sm" : "text-slate-700 hover:bg-white hover:text-ink"}`}
               >
                 {link.label}
               </Link>
@@ -514,7 +629,7 @@ export function Header() {
         {mobileOpen ? (
           <div className="mt-4 grid gap-4 rounded-[24px] border border-black/8 bg-white p-4 shadow-[0_14px_34px_rgba(16,32,26,0.08)] xl:hidden">
             <form onSubmit={submitSearch}>
-              <div className="flex items-center gap-2 rounded-[18px] border border-black/10 bg-[#fcfaf7] px-3 py-2">
+              <div className="flex items-center gap-2 rounded-[18px] border border-black/10 px-3 py-2" style={{ background: "color-mix(in srgb, var(--white) 82%, var(--background))" }}>
                 <HeaderIcon type="search" className="h-4 w-4 text-slate-400" />
                 <input
                   value={query}
@@ -525,7 +640,8 @@ export function Header() {
                 <button
                   type="button"
                   onClick={handleVoiceSearch}
-                  className={`flex h-9 w-9 items-center justify-center rounded-full ${voiceListening ? "bg-[#c07a34] text-white" : "bg-white text-slate-600"}`}
+                  className={`flex h-9 w-9 items-center justify-center rounded-full ${voiceListening ? "text-white" : "bg-white text-slate-600"}`}
+                  style={voiceListening ? { background: "var(--accent)" } : undefined}
                 >
                   <HeaderIcon type="mic" className="h-4 w-4" />
                 </button>
@@ -538,7 +654,8 @@ export function Header() {
                   key={`${link.href}-${link.label}`}
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className="rounded-[16px] border border-black/8 bg-[#fcfaf7] px-4 py-3 text-sm font-semibold text-ink"
+                  className="rounded-[16px] border border-black/8 px-4 py-3 text-sm font-semibold text-ink"
+                  style={{ background: "color-mix(in srgb, var(--white) 82%, var(--background))" }}
                 >
                   {link.label}
                 </Link>
@@ -559,7 +676,8 @@ export function Header() {
                       key={category._id || category.slug}
                       href={`/category/${category.slug}`}
                       onClick={() => setMobileOpen(false)}
-                      className="rounded-[16px] border border-black/8 bg-[#fcfaf7] px-4 py-3 text-sm font-semibold text-ink"
+                      className="rounded-[16px] border border-black/8 px-4 py-3 text-sm font-semibold text-ink"
+                      style={{ background: "color-mix(in srgb, var(--white) 82%, var(--background))" }}
                     >
                       {category.name}
                     </Link>
@@ -576,7 +694,8 @@ export function Header() {
                     key={`${link.href}-${link.label}`}
                     href={link.href}
                     onClick={() => setMobileOpen(false)}
-                    className="rounded-[16px] border border-black/8 bg-[#fcfaf7] px-4 py-3 text-sm font-semibold text-ink"
+                    className="rounded-[16px] border border-black/8 px-4 py-3 text-sm font-semibold text-ink"
+                    style={{ background: "color-mix(in srgb, var(--white) 82%, var(--background))" }}
                   >
                     {link.label}
                   </Link>
