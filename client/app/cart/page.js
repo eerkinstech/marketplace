@@ -184,7 +184,7 @@ export default function CartPage() {
             </div>
           ) : null}
         </div>
-        <aside className="surface-panel h-fit p-6">
+        <aside className="surface-panel h-fit self-start p-6 lg:sticky lg:top-24">
           <div className="eyebrow">Order summary</div>
           <h2 className="mt-3 font-display text-3xl text-ink">Ready to checkout</h2>
 

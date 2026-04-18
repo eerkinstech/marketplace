@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { marketplaceApi } from "@/lib/api/marketplace";
 import { tokenStore } from "@/lib/auth/token-store";
-import { AccountQuickLinks } from "@/components/account/AccountQuickLinks";
 
 const UK_COUNTRY = "United Kingdom";
 
@@ -140,23 +139,20 @@ export default function AccountHomePage() {
   }
 
   return (
-    <section className="container page-section stack">
+    <section className="shell-container page-section stack">
       <div>
         <div className="kicker">Customer account</div>
         <h1 className="page-title">Account dashboard</h1>
         <p className="section-copy">View your contact details, order history, and saved shipping address.</p>
       </div>
-
-      <AccountQuickLinks />
-
       {error ? <div className="card section small">{error}</div> : null}
       {notice ? <div className="card section small border-emerald-200 bg-emerald-50 text-emerald-900">{notice}</div> : null}
 
       {loading ? (
         <div className="glass-card p-6 text-sm text-slate-500">Loading account details...</div>
       ) : (
-        <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-          <article className="glass-card p-6">
+        <div className="grid gap-6 xl:grid-cols-[0.85fr_1.15fr] xl:items-start">
+          <article className="glass-card p-6 xl:sticky xl:top-24">
             <div className="eyebrow">Profile</div>
             <h2 className="mt-2 text-2xl font-semibold text-ink">{profile?.name || "Customer"}</h2>
             <div className="mt-6 grid gap-4 sm:grid-cols-2">

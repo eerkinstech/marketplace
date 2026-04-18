@@ -1,7 +1,3 @@
-import { API_URL } from "@/lib/constants/site";
-
-const API_ORIGIN = API_URL.replace(/\/api\/?$/, "");
-
 function normalizePath(source) {
   if (!source) return "";
 
@@ -10,13 +6,13 @@ function normalizePath(source) {
   }
 
   if (source.startsWith("/uploads/")) {
-    return `${API_ORIGIN}${source}`;
+    return source;
   }
 
   try {
     const url = new URL(source);
     if (url.pathname.startsWith("/uploads/")) {
-      return `${API_ORIGIN}${url.pathname}`;
+      return url.pathname;
     }
     return source;
   } catch {

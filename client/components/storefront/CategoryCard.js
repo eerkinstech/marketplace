@@ -1,27 +1,30 @@
-﻿import Link from "next/link";
+import Link from "next/link";
 
-export function CategoryCard({ category, productCount = 0 }) {
+export function CategoryCard({ category }) {
   return (
-    <article className="surface-panel flex h-full flex-col gap-5 p-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <span className="badge">Category</span>
-          <h3 className="mt-3 font-display text-3xl leading-tight text-ink">{category.name}</h3>
+    <Link href={`/category/${category.slug}`} className="group flex flex-col items-center text-center">
+      <article className="w-full">
+        <div className="mx-auto flex w-full justify-center">
+          <div className="relative h-28 w-28 overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--secondary)_28%,var(--white))] shadow-[0_14px_30px_rgba(15,23,42,0.10)] transition duration-300 group-hover:scale-[1.04] group-hover:shadow-[0_18px_38px_rgba(15,23,42,0.16)] sm:h-32 sm:w-32">
+          {category.image ? (
+            <img
+              src={category.image}
+              alt={category.name}
+              className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.08]"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center px-4 text-center text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">
+              {category.name}
+            </div>
+          )}
+          </div>
         </div>
-        <div className="rounded-full border border-black/10 bg-white/75 px-3 py-2 text-xs uppercase tracking-[0.18em] text-slate-600">
-          {productCount} items
+        <div className="px-2 pt-4">
+          <h3 className="text-lg font-semibold leading-[1.25] tracking-[-0.02em] text-ink sm:text-[18px]">
+            {category.name}
+          </h3>
         </div>
-      </div>
-      <p className="muted-copy text-sm">
-        {category.description || "Browse curated products from verified marketplace sellers in this collection."}
-      </p>
-      <div className="mt-auto flex items-center justify-between gap-3">
-        <span className="text-sm text-slate-500">Slug: {category.slug}</span>
-        <Link className="btn-secondary" href={`/category/${category.slug}`}>
-          Explore
-        </Link>
-      </div>
-    </article>
+      </article>
+    </Link>
   );
 }
-

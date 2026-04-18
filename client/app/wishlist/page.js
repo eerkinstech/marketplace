@@ -111,7 +111,7 @@ export default function WishlistPage() {
               Save products and variants from the product page to keep them here for later.
             </p>
             <div className="mt-8">
-              <Link href="/products" className="inline-flex h-12 items-center justify-center rounded-[16px] bg-[#b8742f] px-7 text-sm font-bold text-white transition hover:bg-[#9f6428]">
+              <Link href="/products" className="btn-primary rounded-[16px] px-7">
                 Continue shopping
               </Link>
             </div>
@@ -148,7 +148,7 @@ export default function WishlistPage() {
                 <button
                   type="button"
                   onClick={() => wishlistStore.clear()}
-                  className="inline-flex items-center gap-3 self-start rounded-[18px] px-2 py-2 text-base font-bold text-[#b8742f] transition hover:text-[#9f6428]"
+                  className="inline-flex items-center gap-3 self-start rounded-[18px] px-2 py-2 text-base font-bold text-[color:var(--accent)] transition hover:text-ink"
                 >
                   <WishlistIcon type="trash" className="h-6 w-6" />
                   <span>Clear All</span>
@@ -167,7 +167,7 @@ export default function WishlistPage() {
                     <div className="grid gap-5 lg:grid-cols-[200px_minmax(0,1fr)_160px] lg:items-start">
                       <Link
                         href={item.slug ? `/product/${item.slug}` : "/products"}
-                        className="overflow-hidden rounded-[20px] border border-black/8 bg-[#f5efe5]"
+                        className="overflow-hidden rounded-[20px] border border-black/8 bg-[color-mix(in_srgb,var(--secondary)_26%,var(--white))]"
                       >
                         <div className="aspect-[1.05/0.72] w-full">
                           {image ? (
@@ -183,7 +183,7 @@ export default function WishlistPage() {
                       <div className="min-w-0">
                         <Link
                           href={item.slug ? `/product/${item.slug}` : "/products"}
-                          className="text-[1.5rem] font-black tracking-tight text-ink transition hover:text-[#b8742f] sm:text-[1.65rem]"
+                          className="text-[1.5rem] font-black tracking-tight text-ink transition hover:text-[color:var(--accent)] sm:text-[1.65rem]"
                         >
                           {item.name}
                         </Link>
@@ -197,7 +197,7 @@ export default function WishlistPage() {
                           <button
                             type="button"
                             onClick={() => addSingleToCart(item)}
-                            className="inline-flex h-12 items-center justify-center gap-3 rounded-[14px] bg-[#b8742f] px-6 text-base font-bold text-white transition hover:bg-[#9f6428]"
+                            className="btn-primary rounded-[14px] px-6 text-base"
                           >
                             <WishlistIcon type="cart" className="h-6 w-6" />
                             <span>Add to Cart</span>
@@ -206,7 +206,7 @@ export default function WishlistPage() {
                           <button
                             type="button"
                             onClick={() => wishlistStore.remove(item.wishlistKey || item)}
-                            className="inline-flex h-12 items-center justify-center gap-3 rounded-[14px] bg-[#ece9e5] px-6 text-base font-bold text-[#b8742f] transition hover:bg-[#e4ddd5]"
+                            className="inline-flex h-12 items-center justify-center gap-3 rounded-[14px] bg-[color-mix(in_srgb,var(--secondary)_28%,var(--white))] px-6 text-base font-bold text-ink transition hover:bg-[color-mix(in_srgb,var(--secondary)_40%,var(--white))]"
                           >
                             <WishlistIcon type="trash" className="h-6 w-6" />
                             <span>Remove</span>
@@ -216,7 +216,7 @@ export default function WishlistPage() {
 
                       <div className="flex h-full flex-col items-start gap-4 lg:items-end">
                         <div className="text-left lg:text-right">
-                          <div className="text-[1.85rem] font-black leading-none text-[#b8742f]">
+                          <div className="text-[1.85rem] font-black leading-none text-ink">
                             {formatCurrency(Number(item?.price || 0))}
                           </div>
                           <div className="mt-1 text-sm text-slate-700">
@@ -239,13 +239,13 @@ export default function WishlistPage() {
           </div>
 
           <aside className="xl:sticky xl:top-6 xl:self-start">
-            <div className="rounded-[24px] bg-[#e8e7e5] p-8 shadow-[0_16px_40px_rgba(16,32,26,0.08)]">
-              <h2 className="text-lg font-black leading-tight tracking-tight text-black">
+            <div className="rounded-[24px] border border-black/8 bg-[color-mix(in_srgb,var(--secondary)_22%,var(--white))] p-8 shadow-[0_16px_40px_rgba(16,32,26,0.08)]">
+              <h2 className="text-lg font-black leading-tight tracking-tight text-ink">
                 Wishlist Summary
               </h2>
 
               <div className="mt-10 flex gap-2 items-center">
-                <span className="text-[1.8rem] font-black text-[#b8742f]">{sortedItems.length}</span>
+                <span className="text-[1.8rem] font-black text-[color:var(--accent)]">{sortedItems.length}</span>
                 <span className="mt-1 text-[1.2rem] font-medium text-slate-700">Items</span>
               </div>
 
@@ -258,7 +258,7 @@ export default function WishlistPage() {
                 <button
                   type="button"
                   onClick={moveAllToCart}
-                  className="inline-flex h-14 w-full items-center justify-center gap-3 rounded-[16px] bg-[#b8742f] px-6 text-lg font-bold text-white transition hover:bg-[#9f6428]"
+                  className="btn-primary h-14 w-full rounded-[16px] px-6 text-lg"
                 >
                   <WishlistIcon type="cart" className="h-7 w-7" />
                   <span>Move All to Cart</span>
@@ -266,7 +266,7 @@ export default function WishlistPage() {
 
                 <Link
                   href="/products"
-                  className="inline-flex h-14 w-full items-center justify-center rounded-[16px] bg-white px-6 text-lg font-medium text-ink transition hover:bg-[#faf6f0]"
+                  className="inline-flex h-14 w-full items-center justify-center rounded-[16px] bg-white px-6 text-lg font-medium text-ink transition hover:bg-[color-mix(in_srgb,var(--secondary)_18%,var(--white))]"
                 >
                   Continue Shopping
                 </Link>

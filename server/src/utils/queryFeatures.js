@@ -14,6 +14,12 @@ export const buildProductQuery = (query) => {
     if (query.minPrice) filters.price.$gte = Number(query.minPrice);
     if (query.maxPrice) filters.price.$lte = Number(query.maxPrice);
   }
+  if (query.stock === "in") {
+    filters.stock = { $gt: 0 };
+  }
+  if (query.stock === "out") {
+    filters.stock = { $lte: 0 };
+  }
 
   const sortMap = {
     newest: "-createdAt",

@@ -411,7 +411,7 @@ export default function CheckoutPage() {
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-end">
             <div>
               <div className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Checkout</div>
-              <h1 className="mt-3 text-[2.1rem] font-black leading-tight tracking-tight text-ink sm:text-[2.7rem]">
+              <h1 className="mt-3 text-[2.1rem] font-medium leading-tight tracking-tight text-ink sm:text-[2.7rem]">
                 Secure UK checkout with customer details, billing, and delivery information
               </h1>
               <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
@@ -440,7 +440,7 @@ export default function CheckoutPage() {
                   <CheckoutIcon type="lock" />
                 </span>
                 <div>
-                  <h2 className="text-2xl font-black tracking-tight text-ink">Customer details</h2>
+                  <h2 className="text-2xl font-medium tracking-tight text-ink">Customer details</h2>
                   <p className="mt-1 text-sm text-slate-500">
                     {token ? "Your account details are loaded automatically when available." : "Use your own details to complete checkout without creating an account."}
                   </p>
@@ -498,7 +498,7 @@ export default function CheckoutPage() {
                   <CheckoutIcon type="truck" />
                 </span>
                 <div>
-                  <h2 className="text-2xl font-black tracking-tight text-ink">Shipping address</h2>
+                  <h2 className="text-2xl font-medium tracking-tight text-ink">Shipping address</h2>
                   <p className="mt-1 text-sm text-slate-500">
                     UK only. Enter the delivery address manually below.
                   </p>
@@ -575,7 +575,7 @@ export default function CheckoutPage() {
             <div className="rounded-[28px] border border-black/8 bg-white p-6 shadow-[0_16px_40px_rgba(16,32,26,0.06)] sm:p-8">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-2xl font-black tracking-tight text-ink">Billing address</h2>
+                  <h2 className="text-2xl font-medium tracking-tight text-ink">Billing address</h2>
                   <p className="mt-1 text-sm text-slate-500">Use the same address or enter a separate billing address.</p>
                 </div>
                 <label className="flex items-center gap-3 rounded-full bg-[#faf6f0] px-4 py-2 text-sm font-semibold text-ink">
@@ -681,7 +681,7 @@ export default function CheckoutPage() {
           <aside className="xl:sticky xl:top-6 xl:self-start">
             <div className="rounded-[28px] border border-black/8 bg-white p-6 shadow-[0_16px_40px_rgba(16,32,26,0.06)]">
               <div className="text-sm font-semibold uppercase tracking-[0.24em] text-slate-400">Order summary</div>
-              <h2 className="mt-3 text-[2rem] font-black leading-tight tracking-tight text-ink">Your items</h2>
+              <h2 className="mt-3 text-[2rem] font-medium leading-tight tracking-tight text-ink">Your items</h2>
               <p className="mt-2 text-sm text-slate-500">
                 {loadingProfile ? "Loading saved customer details..." : token ? "Signed in account details will be used where available." : "Guest checkout is enabled for UK delivery addresses."}
               </p>

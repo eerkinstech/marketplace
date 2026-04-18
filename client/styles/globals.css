@@ -413,7 +413,7 @@
   }
 
   .checkout-layout {
-    @apply grid gap-6 lg:grid-cols-[1.1fr_0.9fr];
+    @apply grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-start;
   }
 
   .hero-metrics {
