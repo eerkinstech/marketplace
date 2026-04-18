@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { getImageSource } from "@/lib/utils/images";
+import MediaLibraryModal from "./MediaLibraryModal";
 
 function ChevronIcon({ open, className = "" }) {
   return (
@@ -90,11 +92,6 @@ function CloseIcon({ className = "" }) {
   );
 }
 
-function getImageSource(image) {
-  if (typeof image === "string") return image;
-  return image?.url || "";
-}
-
 function normalizeOptions(options = []) {
   return options
     .map((option) => ({
@@ -174,7 +171,23 @@ export default function ProductOptions({ formData, setFormData }) {
   const [collapsedGroups, setCollapsedGroups] = useState({});
   const [mediaPicker, setMediaPicker] = useState(null);
 
-  const mediaImages = (formData.images || []).map(getImageSource).filter(Boolean);
+  const productMediaItems = useMemo(
+    () =>
+      (formData.images || [])
+        .map((image, index) => {
+          const url = getImageSource(image);
+          if (!url) return null;
+          return {
+            id: String(image?._id || image?.id || image?.publicId || `product-image-${index}`),
+            url,
+            alt: image?.alt || "",
+            publicId: image?.publicId || ""
+          };
+        })
+        .filter(Boolean),
+    [formData.images]
+  );
+  const mediaImages = productMediaItems.map((item) => item.url);
   const normalizedOptions = normalizeOptions(formData.options || []);
   const optionOrder = normalizedOptions.map((option) => option.name);
   const generatedCombinations = buildCombinations(normalizedOptions);
@@ -301,8 +314,8 @@ export default function ProductOptions({ formData, setFormData }) {
   const openGroupMediaPicker = (group) => {
     setMediaPicker({
       mode: "group",
-      title: `${group.label} Group Media`,
-      description: "Select one image to apply to the whole group.",
+      title: `${group.label} Variant Media`,
+      description: "Choose one product image to apply to this whole variant group.",
       variantIds: group.variants.map((variant) => variant.id),
       selectedImage: getCommonValue(group.variants, "image")
     });
@@ -312,7 +325,7 @@ export default function ProductOptions({ formData, setFormData }) {
     setMediaPicker({
       mode: "variant",
       title: getVariantLabel(variant.optionValues),
-      description: "Select one image to apply only to this variant.",
+      description: "Choose one image from this product gallery for the selected variant.",
       variantId: variant.id,
       selectedImage: variant.image || fallbackImage || ""
     });
@@ -719,7 +732,7 @@ export default function ProductOptions({ formData, setFormData }) {
                         onClick={() => openGroupMediaPicker(group)}
                         className="rounded-xl border border-gray-900 bg-white px-4 py-3 text-[11px] font-semibold text-gray-600 2xl:justify-self-end"
                       >
-                        Gallery & Drag
+                        Assign Image
                       </button>
                     </div>
                   </div>
@@ -818,7 +831,7 @@ export default function ProductOptions({ formData, setFormData }) {
                                   />
                                 ) : (
                                   <div className="flex h-28 w-28 items-center justify-center rounded-xl border border-dashed border-gray-300 bg-[#faf8f3] px-3 text-center text-xs text-gray-400">
-                                    Open media
+                                    Assign image
                                   </div>
                                 )}
                               </button>
@@ -855,79 +868,25 @@ export default function ProductOptions({ formData, setFormData }) {
         ) : null}
       </section>
 
-      {mediaPicker ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setMediaPicker(null)}>
-          <div
-            className="w-full max-w-5xl rounded-[28px] border border-gray-200 bg-white p-6 shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div>
-                <h4 className="text-base font-bold text-gray-950">{mediaPicker.title}</h4>
-                <p className="mt-1 text-[11px] text-gray-600">{mediaPicker.description}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setMediaPicker(null)}
-                className="flex h-11 w-11 items-center justify-center rounded-full bg-gray-100 text-gray-600"
-              >
-                <CloseIcon className="h-4 w-4" />
-              </button>
-            </div>
-
-            {mediaImages.length ? (
-              <div className="space-y-5">
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
-                  {mediaImages.map((image, index) => {
-                    const selected = mediaPicker.selectedImage === image;
-                    return (
-                      <button
-                        key={`${image}-${index}`}
-                        type="button"
-                        onClick={() => applyMediaImage(image)}
-                        className={`overflow-hidden rounded-2xl border-2 bg-white text-left transition ${
-                          selected ? "border-[#b87430] ring-2 ring-[#ecd1b2]" : "border-gray-200 hover:border-[#d9b184]"
-                        }`}
-                      >
-                        <img src={image} alt={`Media ${index + 1}`} className="h-40 w-full object-cover" />
-                        <div className="px-3 py-2 text-[11px] font-medium text-gray-700">
-                          {selected ? "Selected" : "Select image"}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="flex items-center justify-between gap-3">
-                  <div className="text-[11px] text-gray-500">
-                    Pick from uploaded product media. The selected image will be applied immediately.
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={clearMediaImage}
-                      className="rounded-xl border border-red-200 bg-white px-4 py-2.5 text-[11px] font-semibold text-red-600"
-                    >
-                      Clear Image
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setMediaPicker(null)}
-                      className="rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-[11px] font-semibold text-gray-700"
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-gray-300 bg-[#fcfbf8] px-5 py-8 text-center text-sm text-gray-500">
-                No product media found. Upload images in the Images tab first, then open this media library again.
-              </div>
-            )}
-          </div>
-        </div>
-      ) : null}
+      <MediaLibraryModal
+        open={Boolean(mediaPicker)}
+        mode="single"
+        title={mediaPicker?.title || "Variant media"}
+        description={mediaPicker?.description || "Choose a product image for this variant."}
+        items={productMediaItems}
+        selectedItems={mediaPicker?.selectedImage ? [{ url: mediaPicker.selectedImage }] : []}
+        allowUpload={false}
+        emptyMessage="No product media found. Add images in the Images tab first, then assign them to variants here."
+        onClose={() => setMediaPicker(null)}
+        onSave={(selectedItemsList) => {
+          const selectedImage = selectedItemsList[0]?.url || "";
+          if (selectedImage) {
+            applyMediaImage(selectedImage);
+          } else {
+            clearMediaImage();
+          }
+        }}
+      />
     </div>
   );
 }

@@ -109,8 +109,12 @@ export function AdminSidebar() {
   const activePath = getActiveItem();
 
   return (
-    <aside className="fixed left-0 top-0 z-30 flex h-screen w-72 flex-col border-r border-amber-200/10 bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.12),_transparent_22%),linear-gradient(180deg,_#08111f_0%,_#0d1b2a_45%,_#132238_100%)] text-slate-100 shadow-[0_24px_60px_rgba(2,6,23,0.45)]">
-      <div className="border-b border-white/10 px-5 py-6">
+    <aside
+      className="fixed left-0 top-0 bottom-0 z-30 hidden w-72 overflow-hidden border-r border-amber-200/10 text-slate-100 shadow-[0_24px_60px_rgba(2,6,23,0.45)] lg:block"
+      style={{ height: "100vh" }}
+    >
+      <div className="flex h-full min-h-full flex-col bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.12),_transparent_22%),linear-gradient(180deg,_#08111f_0%,_#0d1b2a_45%,_#132238_100%)]">
+      <div className="shrink-0 border-b border-white/10 px-5 py-6">
         <Link href={homePath} className="group flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-amber-300/20 bg-[linear-gradient(135deg,_#f59e0b,_#d97706)] text-base font-black tracking-[0.18em] text-slate-950 shadow-[0_10px_30px_rgba(245,158,11,0.25)] transition-transform duration-200 group-hover:-translate-y-0.5">
             MP
@@ -122,7 +126,7 @@ export function AdminSidebar() {
         </Link>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-5">
+      <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-5">
         <div className="space-y-3">
           {adminMenuGroups.map((group) => {
             const accessibleItems = group.items.filter((item) => hasPermission(item.permissionId || item.path));
@@ -186,7 +190,7 @@ export function AdminSidebar() {
         </div>
       </nav>
 
-      <div className="border-t border-white/10 bg-slate-950/25 p-4">
+      <div className="mt-auto shrink-0 border-t border-white/10 bg-slate-950/25 p-4">
         <button
           type="button"
           onClick={handleLogout}
@@ -195,6 +199,7 @@ export function AdminSidebar() {
           <Icon name="logout" className="h-4 w-4" />
           <span>Logout</span>
         </button>
+      </div>
       </div>
     </aside>
   );

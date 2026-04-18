@@ -1,7 +1,12 @@
 export const buildProductQuery = (query) => {
   const filters = { status: "approved" };
 
-  if (query.category) filters.categorySlug = query.category;
+  if (query.category) {
+    filters.$or = [
+      { categorySlug: query.category },
+      { categorySlugs: query.category }
+    ];
+  }
   if (query.vendorId) filters.vendor = query.vendorId;
   if (query.search) filters.$text = { $search: query.search };
   if (query.minPrice || query.maxPrice) {

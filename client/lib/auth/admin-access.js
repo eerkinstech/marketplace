@@ -18,7 +18,7 @@ export const adminMenuGroups = [
       { icon: "plus-circle", label: "Add Product", path: "/admin/products/new", permissionId: "products" },
       { icon: "boxes", label: "Inventory", path: "/admin/inventory", permissionId: "inventory" },
       { icon: "tags", label: "Categories", path: "/admin/categories", permissionId: "categories" },
-      { icon: "layer-group", label: "Collections", path: "/admin/collections", permissionId: "collections" }
+      { icon: "layer-group", label: "Home Page", path: "/admin/collections", permissionId: "collections" }
     ]
   },
   {

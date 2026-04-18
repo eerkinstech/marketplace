@@ -21,7 +21,8 @@ export const productSchema = z.object({
   shortDescription: z.string().max(180).optional(),
   price: z.number().nonnegative(),
   compareAtPrice: z.number().nonnegative().optional(),
-  categoryId: z.string().min(1),
+  categoryId: z.string().min(1).optional(),
+  categoryIds: z.array(z.string().min(1)).min(1).optional(),
   stock: z.number().int().nonnegative(),
   weight: z.number().nonnegative().optional(),
   sku: z.string().min(3),
@@ -37,4 +38,10 @@ export const productSchema = z.object({
       keywords: z.array(z.string()).optional()
     })
     .optional()
+}).refine((payload) => {
+  const categoryIds = Array.isArray(payload.categoryIds) ? payload.categoryIds.filter(Boolean) : [];
+  return Boolean(payload.categoryId) || categoryIds.length > 0;
+}, {
+  message: "At least one category is required.",
+  path: ["categoryIds"]
 });

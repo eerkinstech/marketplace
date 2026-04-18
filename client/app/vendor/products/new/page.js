@@ -22,12 +22,61 @@ const initialFormData = {
   categories: [],
   benefitsText: "",
   benefitsHeading: "",
+  benefitFields: [],
   metaTitle: "",
   metaDescription: "",
   metaKeywords: ""
 };
 
+function stripHtml(value) {
+  return String(value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function parseBenefitFields(benefitsText = "") {
+  const html = String(benefitsText || "").trim();
+  if (!html) return [];
+
+  const rowMatches = [...html.matchAll(/<p>\s*<strong>(.*?)<\/strong>\s*[:\-]?\s*(.*?)<\/p>/gi)];
+  if (rowMatches.length) {
+    return rowMatches.map((match, index) => ({
+      id: `benefit-${index}`,
+      heading: stripHtml(match[1]),
+      text: stripHtml(match[2])
+    })).filter((field) => field.heading || field.text);
+  }
+
+  return html
+    .split(/<\/li>|<\/p>|<br\s*\/?>/i)
+    .map((item) => stripHtml(item))
+    .filter(Boolean)
+    .map((text, index) => {
+      const match = text.match(/^([^:.-]{2,40})\s*[:\-]\s*(.+)$/);
+      return {
+        id: `benefit-${index}`,
+        heading: match ? match[1].trim() : `Detail ${index + 1}`,
+        text: match ? match[2].trim() : text
+      };
+    });
+}
+
+function serializeBenefitFields(fields = []) {
+  return fields
+    .filter((field) => String(field?.heading || "").trim() || String(field?.text || "").trim())
+    .map((field) => {
+      const heading = String(field?.heading || "").trim();
+      const text = String(field?.text || "").trim();
+      return `<p><strong>${heading || "Detail"}</strong>: ${text}</p>`;
+    })
+    .join("");
+}
+
 function buildFormData(product) {
+  const categoryIds = Array.isArray(product.categories) && product.categories.length
+    ? product.categories.map((category) => String(category?._id || category)).filter(Boolean)
+    : product.category?._id
+      ? [String(product.category._id)]
+      : [];
+
   return {
     name: product.name || "",
     slug: product.slug || "",
@@ -49,9 +98,10 @@ function buildFormData(product) {
       weight: variant.weight?.toString() || "",
       image: variant.image || ""
     })),
-    categories: product.category?._id ? [product.category._id] : [],
+    categories: categoryIds,
     benefitsText: product.benefitsText || "",
     benefitsHeading: product.benefitsHeading || "",
+    benefitFields: parseBenefitFields(product.benefitsText || ""),
     metaTitle: product.seo?.metaTitle || "",
     metaDescription: product.seo?.metaDescription || "",
     metaKeywords: (product.seo?.keywords || product.tags || []).join(", ")
@@ -138,6 +188,7 @@ function VendorProductPageContent() {
         price: Number(formData.price) || 0,
         compareAtPrice: Number(formData.comparePrice) || 0,
         categoryId: formData.categories[0],
+        categoryIds: formData.categories,
         stock: Number(formData.stock) || 0,
         weight: Number(formData.weight) || 0,
         sku: formData.sku.trim(),
@@ -151,7 +202,7 @@ function VendorProductPageContent() {
           image: variant.image || ""
         })),
         benefitsHeading: formData.benefitsHeading.trim(),
-        benefitsText: formData.benefitsText,
+        benefitsText: serializeBenefitFields(formData.benefitFields),
         tags: parsedKeywords,
         seo: {
           metaTitle: formData.metaTitle.trim(),
@@ -195,6 +246,8 @@ function VendorProductPageContent() {
         onSubmit={handleSubmit}
         isLoading={loading}
         isEditing={isEditing}
+        token={token}
+        mediaScope="vendor"
       />
     </section>
   );

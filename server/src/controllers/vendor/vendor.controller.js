@@ -29,6 +29,27 @@ async function uploadProductImages(rawImages = []) {
   );
 }
 
+async function resolveCategories(categoryIds = []) {
+  const normalizedIds = [...new Set((categoryIds || []).filter(Boolean).map(String))];
+  if (!normalizedIds.length) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "At least one category is required");
+  }
+
+  const categories = await Category.find({ _id: { $in: normalizedIds } });
+  if (categories.length !== normalizedIds.length) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "One or more categories are invalid");
+  }
+
+  const categoryMap = new Map(categories.map((category) => [String(category._id), category]));
+  return normalizedIds.map((id) => categoryMap.get(id)).filter(Boolean);
+}
+
+function getProductCategoryIds(payload) {
+  const categoryIds = Array.isArray(payload.categoryIds) ? payload.categoryIds.filter(Boolean) : [];
+  if (categoryIds.length) return categoryIds;
+  return payload.categoryId ? [payload.categoryId] : [];
+}
+
 function normalizeProductPayload(payload) {
   return {
     name: payload.name,
@@ -207,14 +228,16 @@ export const getVendorAnalytics = asyncHandler(async (req, res) => {
 export const createProduct = asyncHandler(async (req, res) => {
   if (req.user.status !== "active") throw new ApiError(StatusCodes.FORBIDDEN, "Vendor account is not approved");
   const payload = req.validatedBody;
-  const category = await Category.findById(payload.categoryId);
-  if (!category) throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid category");
+  const categories = await resolveCategories(getProductCategoryIds(payload));
+  const primaryCategory = categories[0];
   const images = await uploadProductImages(req.body.images || []);
   const product = await Product.create({
     ...normalizeProductPayload(payload),
     vendor: req.user._id,
-    category: category._id,
-    categorySlug: category.slug,
+    category: primaryCategory._id,
+    categories: categories.map((category) => category._id),
+    categorySlug: primaryCategory.slug,
+    categorySlugs: categories.map((category) => category.slug),
     images,
     status: "pending"
   });
@@ -234,12 +257,12 @@ export const updateProduct = asyncHandler(async (req, res) => {
   const product = await Product.findOne({ _id: req.params.id, vendor: req.user._id });
   if (!product) throw new ApiError(StatusCodes.NOT_FOUND, "Product not found");
   const payload = req.validatedBody;
-  if (payload.categoryId) {
-    const category = await Category.findById(payload.categoryId);
-    if (!category) throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid category");
-    product.category = category._id;
-    product.categorySlug = category.slug;
-  }
+  const categories = await resolveCategories(getProductCategoryIds(payload));
+  const primaryCategory = categories[0];
+  product.category = primaryCategory._id;
+  product.categories = categories.map((category) => category._id);
+  product.categorySlug = primaryCategory.slug;
+  product.categorySlugs = categories.map((category) => category.slug);
   Object.assign(product, {
     ...normalizeProductPayload(payload),
     status: "pending"

@@ -2,6 +2,7 @@
 
 import { Fragment, useMemo, useState } from "react";
 import Link from "next/link";
+import { getImageSource } from "@/lib/utils/images";
 
 function Icon({ name, className = "h-4 w-4" }) {
   const props = {
@@ -242,7 +243,11 @@ export function InventoryManager({
               const baseFieldKey = `${product._id}-base-stock`;
               const baseValue = baseStockEdits[product._id] !== undefined ? baseStockEdits[product._id] : Number(product.stock || 0);
               const baseChanged = Number(baseValue) !== Number(product.stock || 0);
-              const imageUrl = product.images?.[0]?.url || "";
+              const imageUrl =
+                getImageSource(product.images?.[0]) ||
+                getImageSource(product.image) ||
+                getImageSource(product.variantCombinations?.find((variant) => variant?.image)?.image) ||
+                "";
 
               return (
                 <Fragment key={product._id}>

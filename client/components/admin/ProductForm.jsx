@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import ProductBasicInfo from "./ProductForm/BasicInfo";
 import ProductPricing from "./ProductForm/Pricing";
 import ProductImages from "./ProductForm/Images";
@@ -8,6 +8,7 @@ import ProductOptions from "./ProductForm/Options";
 import ProductCategories from "./ProductForm/Categories";
 import ProductBenefits from "./ProductForm/Benefits";
 import ProductSEO from "./ProductForm/SEO";
+import { marketplaceApi } from "@/lib/api/marketplace";
 
 export default function ProductForm({
   formData,
@@ -16,8 +17,12 @@ export default function ProductForm({
   onSubmit,
   isLoading,
   isEditing,
+  token,
+  mediaScope = "vendor",
 }) {
   const [activeTab, setActiveTab] = useState("basic");
+  const [mediaItems, setMediaItems] = useState([]);
+  const [mediaError, setMediaError] = useState("");
   const formRef = useRef(null);
 
   const tabs = [
@@ -49,6 +54,44 @@ export default function ProductForm({
     }
     await onSubmit();
   };
+
+  const loadMediaLibrary = async () => {
+    if (!token) return [];
+
+    try {
+      setMediaError("");
+      const response = mediaScope === "admin"
+        ? await marketplaceApi.getAdminMedia(token)
+        : await marketplaceApi.getVendorMedia(token);
+      const items = response.data || [];
+      setMediaItems(items);
+      return items;
+    } catch (error) {
+      setMediaError(error.message || "Failed to load media library.");
+      return [];
+    }
+  };
+
+  const uploadToMediaLibrary = async (images) => {
+    if (!token || !images?.length) return [];
+
+    try {
+      setMediaError("");
+      const response = mediaScope === "admin"
+        ? await marketplaceApi.createAdminMedia(token, { images })
+        : await marketplaceApi.createVendorMedia(token, { images });
+      const createdItems = response.data || [];
+      setMediaItems((current) => [...createdItems, ...current]);
+      return createdItems;
+    } catch (error) {
+      setMediaError(error.message || "Failed to upload media.");
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    loadMediaLibrary();
+  }, [token, mediaScope]);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -89,12 +132,22 @@ export default function ProductForm({
 
           {/* Images */}
           {activeTab === "images" && (
-            <ProductImages formData={formData} setFormData={setFormData} />
+            <ProductImages
+              formData={formData}
+              setFormData={setFormData}
+              mediaItems={mediaItems}
+              mediaError={mediaError}
+              onMediaUpload={uploadToMediaLibrary}
+              onMediaRefresh={loadMediaLibrary}
+            />
           )}
 
           {/* Options & Variants */}
           {activeTab === "options" && (
-            <ProductOptions formData={formData} setFormData={setFormData} />
+            <ProductOptions
+              formData={formData}
+              setFormData={setFormData}
+            />
           )}
 
           {/* Categories */}

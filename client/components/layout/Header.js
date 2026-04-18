@@ -40,16 +40,31 @@ function resolveMenuHref(item) {
   return item?.url || item?.href || item?.link || "#";
 }
 
+function normalizeMenuNode(item) {
+  if (!item) return null;
+
+  const submenu = Array.isArray(item?.submenu)
+    ? item.submenu.map(normalizeMenuNode).filter(Boolean)
+    : [];
+
+  const label = item?.label || "Untitled";
+  const href = resolveMenuHref(item);
+
+  if (!label) return null;
+
+  return {
+    ...item,
+    href,
+    label,
+    submenu
+  };
+}
+
 function normalizeMenuItems(items, fallback = []) {
   if (!Array.isArray(items) || !items.length) return fallback;
 
   return items
-    .map((item) => ({
-      ...item,
-      href: resolveMenuHref(item),
-      label: item?.label || "Untitled",
-      submenu: Array.isArray(item?.submenu) ? item.submenu : []
-    }))
+    .map(normalizeMenuNode)
     .filter((item) => item.label && item.href);
 }
 
@@ -81,6 +96,8 @@ function HeaderIcon({ type, className = "h-4 w-4" }) {
   if (type === "grid") return <svg {...commonProps}><rect x="4" y="4" width="6" height="6" rx="1.2" /><rect x="14" y="4" width="6" height="6" rx="1.2" /><rect x="4" y="14" width="6" height="6" rx="1.2" /><rect x="14" y="14" width="6" height="6" rx="1.2" /></svg>;
   if (type === "chevron-down") return <svg {...commonProps}><path d="m6 9 6 6 6-6" /></svg>;
   if (type === "chevron-up") return <svg {...commonProps}><path d="m18 15-6-6-6 6" /></svg>;
+  if (type === "chevron-left") return <svg {...commonProps}><path d="m14.5 5-5.5 7 5.5 7" /></svg>;
+  if (type === "chevron-right") return <svg {...commonProps}><path d="m9.5 5 5.5 7-5.5 7" /></svg>;
   return null;
 }
 
@@ -184,45 +201,12 @@ function slugifyForMatch(value = "") {
     .replace(/^-+|-+$/g, "");
 }
 
-function BrowseTree({ items, mobile = false, onNavigate = null }) {
-  if (!items.length) return null;
-
-  return (
-    <div className="grid grid-cols-2 gap-3">
-      {items.map((item) => (
-        <div
-          key={item.id || `${item.label}-${item.href}`}
-          className={`rounded-[18px] border border-black/6 ${mobile ? "p-4" : "p-4"}`}
-          style={{ background: "color-mix(in srgb, var(--white) 82%, var(--background))" }}
-        >
-          <Link href={item.href} onClick={onNavigate} className="text-sm font-semibold text-ink transition hover:text-[var(--accent)]">
-            {item.label}
-          </Link>
-          {item.submenu?.length ? (
-            <div className="mt-3 grid gap-2 border-t border-black/6 pt-3 sm:grid-cols-2">
-              {item.submenu.map((child) => (
-                <Link
-                  key={child.id || `${child.label}-${child.url}`}
-                  href={resolveMenuHref(child)}
-                  onClick={onNavigate}
-                  className="text-sm text-slate-600 transition hover:text-ink"
-                >
-                  {child.label}
-                </Link>
-              ))}
-            </div>
-          ) : null}
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function Header() {
   const router = useRouter();
   const pathname = usePathname() || "";
   const [query, setQuery] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileBrowsePath, setMobileBrowsePath] = useState([]);
   const [megaOpen, setMegaOpen] = useState(false);
   const [activeBrowseIndex, setActiveBrowseIndex] = useState(0);
   const [voiceListening, setVoiceListening] = useState(false);
@@ -236,12 +220,22 @@ export function Header() {
   const [bubbleActive, setBubbleActive] = useState(false);
   const cartButtonRef = useRef(null);
   const wishlistButtonRef = useRef(null);
+  const mobileMenuScrollRef = useRef(null);
 
   const { browseMenu, mainNavMenu, topBarMenu } = useMenus();
   const topBarLinks = useMemo(() => normalizeMenuItems(topBarMenu, topBarFallbackLinks), [topBarMenu]);
   const navLinks = useMemo(() => normalizeMenuItems(mainNavMenu, primaryLinks), [mainNavMenu]);
   const browseLinks = useMemo(() => normalizeMenuItems(browseMenu), [browseMenu]);
   const desktopBrowseTabs = useMemo(() => toDesktopBrowseTabs(browseLinks, categories), [browseLinks, categories]);
+  const mobileBrowseItems = useMemo(() => {
+    if (browseLinks.length) return browseLinks;
+    return categories.map((category, index) => ({
+      id: category._id || category.slug || `mobile-category-${index}`,
+      label: category.name,
+      href: `/category/${category.slug}`,
+      submenu: []
+    }));
+  }, [browseLinks, categories]);
 
   function getCartCount() {
     return cartStore.getItems().reduce((sum, item) => sum + Number(item?.quantity || 0), 0);
@@ -372,6 +366,7 @@ export function Header() {
   useEffect(() => {
     setMobileOpen(false);
     setMegaOpen(false);
+    setMobileBrowsePath([]);
   }, [pathname]);
 
   useEffect(() => {
@@ -393,6 +388,40 @@ export function Header() {
   }, [categories]);
 
   const activeBrowseTab = desktopBrowseTabs[activeBrowseIndex] || desktopBrowseTabs[0] || null;
+  const mobileBrowsePanels = useMemo(() => {
+    const rootPanel = {
+      key: "root",
+      title: "Browse all categories",
+      href: "",
+      items: mobileBrowseItems,
+      parentIndex: -1
+    };
+
+    const nestedPanels = mobileBrowsePath.map((item, index) => ({
+      key: item.id || `${item.label}-${index}`,
+      title: item.label,
+      href: item.href,
+      items: Array.isArray(item.submenu) ? item.submenu : [],
+      parentIndex: index - 1
+    }));
+
+    return [rootPanel, ...nestedPanels];
+  }, [mobileBrowseItems, mobileBrowsePath]);
+
+  function handleMobileBrowseOpen(item) {
+    if (!item?.submenu?.length) return;
+    setMobileBrowsePath((current) => [...current, item]);
+    window.requestAnimationFrame(() => {
+      mobileMenuScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
+
+  function handleMobileBrowseBack() {
+    setMobileBrowsePath((current) => current.slice(0, -1));
+    window.requestAnimationFrame(() => {
+      mobileMenuScrollRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  }
 
   function submitSearch(event) {
     event.preventDefault();
@@ -627,7 +656,7 @@ export function Header() {
         </div>
 
         {mobileOpen ? (
-          <div className="mt-4 grid gap-4 rounded-[24px] border border-black/8 bg-white p-4 shadow-[0_14px_34px_rgba(16,32,26,0.08)] xl:hidden">
+          <div ref={mobileMenuScrollRef} className="mt-4 grid max-h-[calc(100vh-150px)] gap-4 overflow-y-auto rounded-[24px] border border-black/8 bg-white p-4 shadow-[0_14px_34px_rgba(16,32,26,0.08)] xl:hidden">
             <form onSubmit={submitSearch}>
               <div className="flex items-center gap-2 rounded-[18px] border border-black/10 px-3 py-2" style={{ background: "color-mix(in srgb, var(--white) 82%, var(--background))" }}>
                 <HeaderIcon type="search" className="h-4 w-4 text-slate-400" />
@@ -648,58 +677,89 @@ export function Header() {
               </div>
             </form>
 
-            <div className="grid gap-2">
-              {[...navLinks, ...(isAuthenticated ? [{ href: "/account", label: "Account" }] : [{ href: "/login", label: "Login" }])].map((link) => (
-                <Link
-                  key={`${link.href}-${link.label}`}
-                  href={link.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="rounded-[16px] border border-black/8 px-4 py-3 text-sm font-semibold text-ink"
-                  style={{ background: "color-mix(in srgb, var(--white) 82%, var(--background))" }}
+            <div className="grid gap-3">
+              <div className="overflow-hidden rounded-[22px] border border-black/8" style={{ background: "color-mix(in srgb, var(--white) 86%, var(--background))" }}>
+                <div
+                  className="flex transition-transform duration-300 ease-out"
+                  style={{ transform: `translateX(-${mobileBrowsePath.length * 100}%)` }}
                 >
-                  {link.label}
-                </Link>
-              ))}
-              <Link href="/vendor/dashboard" onClick={() => setMobileOpen(false)} className="rounded-[16px] bg-ink px-4 py-3 text-sm font-semibold text-white">
-                Vendor Dashboard
-              </Link>
-            </div>
+                  {mobileBrowsePanels.map((panel, panelIndex) => (
+                    <div key={panel.key} className="min-w-full">
+                      <div className="flex items-center justify-between gap-3 border-b border-black/8 px-4 py-4">
+                        <div className="min-w-0">
+                          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Shop by Category</div>
+                          <div className="mt-1 text-base font-semibold text-ink">
+                            {panel.title}
+                          </div>
+                        </div>
+                        {panelIndex > 0 ? (
+                          <button
+                            type="button"
+                            onClick={handleMobileBrowseBack}
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-black/8 bg-white text-ink"
+                            aria-label="Back to previous category panel"
+                          >
+                            <HeaderIcon type="chevron-left" className="h-4 w-4" />
+                          </button>
+                        ) : null}
+                      </div>
 
-            <div className="grid gap-2">
-              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Categories</div>
-              {browseLinks.length ? (
-                <BrowseTree items={browseLinks} mobile onNavigate={() => setMobileOpen(false)} />
-              ) : (
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {categories.map((category) => (
-                    <Link
-                      key={category._id || category.slug}
-                      href={`/category/${category.slug}`}
-                      onClick={() => setMobileOpen(false)}
-                      className="rounded-[16px] border border-black/8 px-4 py-3 text-sm font-semibold text-ink"
-                      style={{ background: "color-mix(in srgb, var(--white) 82%, var(--background))" }}
-                    >
-                      {category.name}
-                    </Link>
+                      {panel.href ? (
+                        <Link
+                          href={panel.href}
+                          onClick={() => setMobileOpen(false)}
+                          className="flex items-center justify-between border-b border-black/8 px-4 py-3 text-sm font-semibold text-[var(--primary)]"
+                        >
+                          <span>Shop all {panel.title}</span>
+                          <HeaderIcon type="chevron-right" className="h-4 w-4" />
+                        </Link>
+                      ) : null}
+
+                      <div className="grid">
+                        {panel.items.map((item) => {
+                          const hasChildren = Array.isArray(item.submenu) && item.submenu.length > 0;
+                          if (hasChildren) {
+                            return (
+                              <button
+                                key={item.id || `${item.label}-${item.href}`}
+                                type="button"
+                                onClick={() => handleMobileBrowseOpen(item)}
+                                className="flex items-center justify-between gap-4 border-b border-black/6 px-4 py-4 text-left text-sm font-semibold text-ink transition last:border-b-0 hover:bg-black/[0.02]"
+                              >
+                                <span>{item.label}</span>
+                                <HeaderIcon type="chevron-right" className="h-4 w-4 text-slate-400" />
+                              </button>
+                            );
+                          }
+
+                          return (
+                            <Link
+                              key={item.id || `${item.label}-${item.href}`}
+                              href={item.href}
+                              onClick={() => setMobileOpen(false)}
+                              className="flex items-center justify-between gap-4 border-b border-black/6 px-4 py-4 text-sm font-semibold text-ink transition last:border-b-0 hover:bg-black/[0.02]"
+                            >
+                              <span>{item.label}</span>
+                              <HeaderIcon type="chevron-right" className="h-4 w-4 text-slate-300" />
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
                   ))}
                 </div>
-              )}
-            </div>
+              </div>
 
-            <div className="grid gap-2">
-              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Quick links</div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {topBarLinks.map((link) => (
-                  <Link
-                    key={`${link.href}-${link.label}`}
-                    href={link.href}
-                    onClick={() => setMobileOpen(false)}
-                    className="rounded-[16px] border border-black/8 px-4 py-3 text-sm font-semibold text-ink"
-                    style={{ background: "color-mix(in srgb, var(--white) 82%, var(--background))" }}
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+              <div className="grid grid-cols-3 gap-2">
+                <Link href="/wishlist" onClick={() => setMobileOpen(false)} className="rounded-[16px] border border-black/8 px-3 py-3 text-center text-sm font-semibold text-ink" style={{ background: "color-mix(in srgb, var(--white) 82%, var(--background))" }}>
+                  Wishlist
+                </Link>
+                <Link href="/cart" onClick={() => setMobileOpen(false)} className="rounded-[16px] border border-black/8 px-3 py-3 text-center text-sm font-semibold text-ink" style={{ background: "color-mix(in srgb, var(--white) 82%, var(--background))" }}>
+                  Cart
+                </Link>
+                <Link href={isAuthenticated ? "/account" : "/login"} onClick={() => setMobileOpen(false)} className="rounded-[16px] border border-black/8 px-3 py-3 text-center text-sm font-semibold text-ink" style={{ background: "color-mix(in srgb, var(--white) 82%, var(--background))" }}>
+                  {isAuthenticated ? "Account" : "Login"}
+                </Link>
               </div>
             </div>
           </div>

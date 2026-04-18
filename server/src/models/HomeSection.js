@@ -32,7 +32,11 @@ const homeSectionSchema = new mongoose.Schema(
         "product_grid",
         "banner",
         "split_banner",
-        "article_grid"
+        "article_grid",
+        "promo_showcase",
+        "category_mosaic",
+        "three_col_category",
+        "image_banner"
       ],
       required: true
     },
@@ -51,7 +55,9 @@ const homeSectionSchema = new mongoose.Schema(
     imageUrl: { type: String, default: "" },
     mobileImageUrl: { type: String, default: "" },
     limit: { type: Number, default: 6, min: 1, max: 24 },
+    sourceMode: { type: String, enum: ["all", "manual", "category", "vendor"], default: "all" },
     categoryIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Category" }],
+    vendorIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     productIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
     items: [homeSectionItemSchema]
   },

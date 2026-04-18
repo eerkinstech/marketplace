@@ -56,6 +56,15 @@ function getProductDisplayMetrics(product) {
   };
 }
 
+function getProductTableImage(product) {
+  return (
+    getImageSource(product?.images?.[0]) ||
+    getImageSource(product?.image) ||
+    getImageSource(product?.variantCombinations?.find((variant) => variant?.image)?.image) ||
+    ""
+  );
+}
+
 function parseCsvLine(line) {
   const values = [];
   let current = "";
@@ -394,7 +403,7 @@ export default function VendorProductsPage() {
             {filteredProducts.map((product) => {
               const checked = selectedIds.includes(String(product._id));
               const displayMetrics = getProductDisplayMetrics(product);
-              const productImage = getImageSource(product.images?.[0]);
+              const productImage = getProductTableImage(product);
               return (
                 <tr key={product._id} className="border-b border-[#e3ede8] align-top transition hover:bg-[#fbfefd] last:border-b-0">
                   <td className="px-5 py-6"><input type="checkbox" checked={checked} onChange={() => toggleRow(product._id)} /></td>

@@ -10,13 +10,23 @@ export function AppChrome({ children }) {
   const isVendorRoute = pathname.startsWith("/vendor");
 
   if (isAdminRoute || isVendorRoute) {
-    return <main className="min-h-screen">{children}</main>;
+    return (
+      <main className="page-transition-shell min-h-screen">
+        <div key={pathname} className="page-transition-stage min-h-screen">
+          {children}
+        </div>
+      </main>
+    );
   }
 
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
-      <main className="flex-1">{children}</main>
+      <main className="page-transition-shell flex-1">
+        <div key={pathname} className="page-transition-stage h-full">
+          {children}
+        </div>
+      </main>
       <Footer />
     </div>
   );

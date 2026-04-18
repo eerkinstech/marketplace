@@ -1,36 +1,101 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { marketplaceApi } from "@/lib/api/marketplace";
 import { useAccessToken } from "@/lib/auth/use-access-token";
 
-const SECTION_TYPES = [
-  { value: "hero_slider", label: "Hero Slider" },
-  { value: "category_strip", label: "Category Strip" },
-  { value: "category_grid", label: "Category Grid" },
-  { value: "product_carousel", label: "Product Carousel" },
-  { value: "product_grid", label: "Product Grid" },
-  { value: "banner", label: "Banner" },
-  { value: "split_banner", label: "Split Banner" },
-  { value: "article_grid", label: "Article Grid" }
+const HOME_TABS = [
+  {
+    slug: "home-popular-categories",
+    label: "Popular Categories",
+    sectionType: "category_strip",
+    order: 10,
+    fields: ["title"],
+    categoryMode: "categories"
+  },
+  {
+    slug: "home-recommended-products",
+    label: "Recommended Products",
+    sectionType: "product_carousel",
+    order: 20,
+    fields: ["title", "button", "product_settings"],
+    productMode: "products"
+  },
+  {
+    slug: "home-three-col-category",
+    label: "Three Col Category",
+    sectionType: "three_col_category",
+    order: 30,
+    fields: [],
+    categoryMode: "categories",
+    customLayout: "three_col_category"
+  },
+  {
+    slug: "home-mid-product-carousel",
+    label: "Middle Product Carousel",
+    sectionType: "product_carousel",
+    order: 35,
+    fields: ["title", "description", "button", "product_settings"],
+    productMode: "products"
+  },
+  {
+    slug: "home-image-banner-1",
+    label: "Banner One",
+    sectionType: "image_banner",
+    order: 40,
+    fields: [],
+    imageMode: true
+  },
+  {
+    slug: "home-trending-products",
+    label: "Trending Products",
+    sectionType: "product_carousel",
+    order: 50,
+    fields: ["title", "button", "product_settings"],
+    productMode: "products"
+  },
+  {
+    slug: "home-category-mosaic",
+    label: "Category Mosaic",
+    sectionType: "category_mosaic",
+    order: 60,
+    fields: ["title", "description"],
+    categoryMode: "categories"
+  },
+  {
+    slug: "home-latest-market-picks",
+    label: "Latest Market Picks",
+    sectionType: "product_carousel",
+    order: 70,
+    fields: ["title", "button", "product_settings"],
+    productMode: "products"
+  },
+  {
+    slug: "home-promo-showcase",
+    label: "Promo Showcase",
+    sectionType: "promo_showcase",
+    order: 80,
+    fields: [],
+    categoryMode: "categories",
+    customLayout: "promo_showcase"
+  },
+  {
+    slug: "home-curated-essentials",
+    label: "Curated Essentials",
+    sectionType: "product_carousel",
+    order: 90,
+    fields: ["title", "button", "product_settings"],
+    productMode: "products"
+  },
+  {
+    slug: "home-image-banner-2",
+    label: "Banner Two",
+    sectionType: "image_banner",
+    order: 100,
+    fields: [],
+    imageMode: true
+  }
 ];
-
-const EDITOR_TABS = [
-  { id: "details", label: "Details" },
-  { id: "content", label: "Heading & Content" },
-  { id: "links", label: "Products / Categories" },
-  { id: "items", label: "Slides / Items" },
-  { id: "design", label: "Design" }
-];
-
-function generateSlug(value) {
-  return String(value || "")
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")
-    .replace(/-+/g, "-");
-}
 
 function normalizeCollection(response) {
   const rows = response?.data || response || [];
@@ -42,6 +107,15 @@ function normalizeProducts(response) {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.items)) return payload.items;
   return [];
+}
+
+function generateSlug(value) {
+  return String(value || "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-");
 }
 
 function createEmptyItem() {
@@ -61,17 +135,17 @@ function createEmptyItem() {
   };
 }
 
-function createEmptySection(type = "hero_slider", order = 0) {
-  return {
-    _id: `draft-${Date.now()}`,
+function createSectionFromTab(tab) {
+  const base = {
+    _id: `draft-${tab.slug}`,
     isDraft: true,
-    name: "New Section",
-    slug: `new-section-${order + 1}`,
-    sectionType: type,
-    order,
+    name: tab.label,
+    slug: tab.slug,
+    sectionType: tab.sectionType,
+    order: tab.order,
     isActive: true,
     eyebrow: "",
-    title: "",
+    title: tab.label,
     subtitle: "",
     description: "",
     ctaLabel: "",
@@ -82,15 +156,53 @@ function createEmptySection(type = "hero_slider", order = 0) {
     accentColor: "",
     imageUrl: "",
     mobileImageUrl: "",
-    limit: 6,
+    limit: 8,
+    sourceMode: tab.productMode ? "all" : "all",
     categoryIds: [],
+    vendorIds: [],
     productIds: [],
-    items: type === "banner" ? [createEmptyItem()] : type === "hero_slider" || type === "split_banner" || type === "article_grid" ? [createEmptyItem()] : []
+    items: []
   };
+
+  if (tab.customLayout === "three_col_category") {
+    return {
+      ...base,
+      centerTitle: "Discover Categories",
+      items: [
+        { ...createEmptyItem(), title: "Browse category" },
+        { ...createEmptyItem(), title: "Find the right Product" }
+      ]
+    };
+  }
+
+  if (tab.customLayout === "promo_showcase") {
+    return {
+      ...base,
+      items: [
+        { ...createEmptyItem(), title: "Ready for an upgrade?" },
+        { ...createEmptyItem(), title: "Self care" }
+      ]
+    };
+  }
+
+  return base;
 }
 
-function updateSectionList(sections, nextSection) {
-  return sections.map((section) => (String(section._id) === String(nextSection._id) ? nextSection : section));
+function mapSectionsToTabs(sections) {
+  const map = new Map(sections.map((section) => [section.slug, section]));
+  return HOME_TABS.map((tab) => {
+    const existing = map.get(tab.slug);
+    return existing ? { ...existing, isDraft: false } : createSectionFromTab(tab);
+  });
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (event) => resolve(String(event.target?.result || ""));
+    reader.onerror = () => reject(new Error(`Failed to read ${file?.name || "image"}`));
+    reader.readAsDataURL(file);
+  });
 }
 
 function Field({ label, children, hint }) {
@@ -121,10 +233,11 @@ function TextArea(props) {
   );
 }
 
-function SelectableList({ title, items, selectedIds, onToggle, emptyMessage, getLabel }) {
+function SelectList({ title, items, selectedIds, onToggle, getLabel, emptyMessage, search, onSearch }) {
   return (
-    <div className="rounded-[24px] border border-black/8 bg-[#fcfaf7] p-4">
-      <div className="mb-3 text-sm font-semibold text-slate-900">{title}</div>
+    <div className="grid min-w-0 gap-3 rounded-[24px] border border-black/8 bg-[#fcfaf7] p-4">
+      <div className="text-sm font-semibold text-slate-900">{title}</div>
+      <TextInput value={search} onChange={(event) => onSearch(event.target.value)} placeholder={`Search ${title.toLowerCase()}`} />
       <div className="grid max-h-[320px] gap-2 overflow-y-auto pr-1">
         {!items.length ? <div className="rounded-2xl bg-white px-4 py-3 text-sm text-slate-500">{emptyMessage}</div> : null}
         {items.map((item) => {
@@ -132,8 +245,7 @@ function SelectableList({ title, items, selectedIds, onToggle, emptyMessage, get
           return (
             <label
               key={item._id}
-              className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3 text-sm transition ${checked ? "border-[#0a5a46] bg-[#edf7f2]" : "border-black/8 bg-white hover:bg-[#f8f5f1]"
-                }`}
+              className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-3 text-sm transition ${checked ? "border-[#0a5a46] bg-[#edf7f2]" : "border-black/8 bg-white hover:bg-[#f8f5f1]"}`}
             >
               <input
                 type="checkbox"
@@ -153,22 +265,64 @@ function SelectableList({ title, items, selectedIds, onToggle, emptyMessage, get
   );
 }
 
+function UploadField({ value, onChange, onUpload, uploading }) {
+  const inputRef = useRef(null);
+
+  return (
+    <div className="grid gap-3">
+      <TextInput value={value || ""} onChange={(event) => onChange(event.target.value)} placeholder="Image URL" />
+      <div className="flex flex-wrap gap-3">
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className="rounded-2xl border border-black/10 bg-[#faf7f2] px-4 py-3 text-sm font-semibold text-slate-900 disabled:opacity-50"
+        >
+          {uploading ? "Uploading..." : "Upload Image"}
+        </button>
+        {value ? (
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700"
+          >
+            Remove
+          </button>
+        ) : null}
+      </div>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) onUpload(file);
+          event.target.value = "";
+        }}
+      />
+    </div>
+  );
+}
+
 export default function AdminCollectionsPage() {
   const { token, error: authError, setError: setAuthError } = useAccessToken(
-    "Login with an admin account to manage homepage collections."
+    "Login with an admin account to manage homepage sections."
   );
 
   const [sections, setSections] = useState([]);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [activeSectionId, setActiveSectionId] = useState("");
-  const [activeEditorTab, setActiveEditorTab] = useState("details");
+  const [vendors, setVendors] = useState([]);
+  const [activeSlug, setActiveSlug] = useState(HOME_TABS[0].slug);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [pageError, setPageError] = useState("");
   const [notice, setNotice] = useState("");
   const [productSearch, setProductSearch] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
+  const [vendorSearch, setVendorSearch] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (!token) return;
@@ -176,23 +330,25 @@ export default function AdminCollectionsPage() {
     async function loadPage() {
       try {
         setLoading(true);
-        const [sectionsResponse, productsResponse, categoriesResponse] = await Promise.all([
+        const [sectionsResponse, productsResponse, categoriesResponse, vendorsResponse] = await Promise.all([
           marketplaceApi.getAdminHomeSections(token),
           marketplaceApi.getAdminProducts(token),
-          marketplaceApi.getAdminCategories(token)
+          marketplaceApi.getAdminCategories(token),
+          marketplaceApi.getAdminVendors(token)
         ]);
 
-        const nextSections = normalizeCollection(sectionsResponse);
+        const nextSections = mapSectionsToTabs(normalizeCollection(sectionsResponse));
         const nextProducts = normalizeProducts(productsResponse);
         const nextCategories = normalizeCollection(categoriesResponse?.data || categoriesResponse);
+        const nextVendors = normalizeCollection(vendorsResponse?.data || vendorsResponse);
 
         setSections(nextSections);
         setProducts(nextProducts);
         setCategories(nextCategories);
-        setActiveSectionId((current) => current || nextSections[0]?._id || "");
+        setVendors(nextVendors);
         setPageError("");
       } catch (error) {
-        const message = error?.message || "Failed to load collections";
+        const message = error?.message || "Failed to load homepage editor";
         setPageError(message);
         setAuthError(message);
       } finally {
@@ -204,17 +360,43 @@ export default function AdminCollectionsPage() {
   }, [token, setAuthError]);
 
   const activeSection = useMemo(
-    () => sections.find((section) => String(section._id) === String(activeSectionId)) || null,
-    [sections, activeSectionId]
+    () => sections.find((section) => section.slug === activeSlug) || null,
+    [sections, activeSlug]
+  );
+
+  const activeTab = useMemo(
+    () => HOME_TABS.find((tab) => tab.slug === activeSlug) || HOME_TABS[0],
+    [activeSlug]
   );
 
   const filteredProducts = useMemo(() => {
     const term = productSearch.trim().toLowerCase();
-    if (!term) return products;
-    return products.filter((product) =>
+    const sourceMode = activeSection?.sourceMode || "all";
+
+    const scopedProducts = products.filter((product) => {
+      const productCategoryId = String(product?.category?._id || product?.category || "");
+      const productVendorId = String(product?.vendor?._id || product?.vendor || "");
+
+      if (sourceMode === "category") {
+        const selectedCategoryIds = (activeSection?.categoryIds || []).map(String);
+        if (!selectedCategoryIds.length) return false;
+        return selectedCategoryIds.includes(productCategoryId);
+      }
+
+      if (sourceMode === "vendor") {
+        const selectedVendorIds = (activeSection?.vendorIds || []).map(String);
+        if (!selectedVendorIds.length) return false;
+        return selectedVendorIds.includes(productVendorId);
+      }
+
+      return true;
+    });
+
+    if (!term) return scopedProducts;
+    return scopedProducts.filter((product) =>
       [product.name, product.slug].filter(Boolean).some((value) => value.toLowerCase().includes(term))
     );
-  }, [products, productSearch]);
+  }, [products, productSearch, activeSection]);
 
   const filteredCategories = useMemo(() => {
     const term = categorySearch.trim().toLowerCase();
@@ -224,130 +406,139 @@ export default function AdminCollectionsPage() {
     );
   }, [categories, categorySearch]);
 
-  function setSectionField(field, value) {
-    if (!activeSection) return;
-    const nextSection = { ...activeSection, [field]: value };
-    if (field === "name" && (!activeSection.slug || activeSection.slug.startsWith("new-section-"))) {
-      nextSection.slug = generateSlug(value);
-    }
-    setSections((current) => updateSectionList(current, nextSection));
-  }
+  const filteredVendors = useMemo(() => {
+    const term = vendorSearch.trim().toLowerCase();
+    if (!term) return vendors;
+    return vendors.filter((vendor) =>
+      [vendor.storeName, vendor.storeSlug, vendor.name, vendor.email]
+        .filter(Boolean)
+        .some((value) => value.toLowerCase().includes(term))
+    );
+  }, [vendors, vendorSearch]);
 
-  function setItemField(index, field, value) {
-    if (!activeSection) return;
-    const nextItems = [...(activeSection.items || [])];
-    nextItems[index] = { ...(nextItems[index] || createEmptyItem()), [field]: value };
-    setSections((current) => updateSectionList(current, { ...activeSection, items: nextItems }));
-  }
-
-  function addItem() {
+  function updateActiveSection(patch) {
     if (!activeSection) return;
     setSections((current) =>
-      updateSectionList(current, { ...activeSection, items: [...(activeSection.items || []), createEmptyItem()] })
+      current.map((section) => (section.slug === activeSection.slug ? { ...section, ...patch } : section))
     );
   }
 
-  function removeItem(index) {
+  function updateItem(index, patch) {
     if (!activeSection) return;
-    const nextItems = (activeSection.items || []).filter((_, itemIndex) => itemIndex !== index);
-    setSections((current) => updateSectionList(current, { ...activeSection, items: nextItems }));
+    const nextItems = [...(activeSection.items || [])];
+    nextItems[index] = { ...(nextItems[index] || createEmptyItem()), ...patch };
+    updateActiveSection({ items: nextItems });
   }
 
   function toggleRelation(field, id) {
     if (!activeSection) return;
     const currentIds = Array.isArray(activeSection[field]) ? activeSection[field].map(String) : [];
     const nextIds = currentIds.includes(id) ? currentIds.filter((value) => value !== id) : [...currentIds, id];
-    setSections((current) => updateSectionList(current, { ...activeSection, [field]: nextIds }));
+    updateActiveSection({ [field]: nextIds });
   }
 
-  function handleTypeChange(nextType) {
-    if (!activeSection) return;
-    const nextSection = {
-      ...activeSection,
-      sectionType: nextType
-    };
+  async function uploadImage(file, assign) {
+    if (!token || !file) return;
 
-    if (["hero_slider", "banner", "split_banner", "article_grid"].includes(nextType) && (!activeSection.items || !activeSection.items.length)) {
-      nextSection.items = [createEmptyItem()];
+    try {
+      setUploading(true);
+      setPageError("");
+      const image = await fileToDataUrl(file);
+      const response = await marketplaceApi.createAdminMedia(token, { images: [image] });
+      const uploaded = Array.isArray(response?.data) ? response.data[0] : response?.data?.[0];
+      if (!uploaded?.url) throw new Error("Image upload failed");
+      assign(uploaded.url);
+      setNotice("Image uploaded.");
+    } catch (error) {
+      setPageError(error?.message || "Failed to upload image");
+    } finally {
+      setUploading(false);
     }
-
-    if (!["hero_slider", "banner", "split_banner", "article_grid"].includes(nextType)) {
-      nextSection.items = [];
-    }
-
-    setSections((current) => updateSectionList(current, nextSection));
-  }
-
-  function createSection() {
-    const nextSection = createEmptySection("hero_slider", sections.length);
-    setSections((current) => [...current, nextSection]);
-    setActiveSectionId(nextSection._id);
-    setActiveEditorTab("details");
-    setNotice("");
   }
 
   async function saveSection() {
     if (!token || !activeSection) return;
-    if (!activeSection.name?.trim()) {
-      setPageError("Section name is required.");
-      setActiveEditorTab("details");
-      return;
-    }
 
     const payload = {
-      name: activeSection.name,
-      slug: activeSection.slug || generateSlug(activeSection.name),
-      sectionType: activeSection.sectionType,
-      order: Number(activeSection.order || 0),
+      name: activeSection.name || activeTab.label,
+      slug: activeSection.slug || generateSlug(activeTab.label),
+      sectionType: activeSection.sectionType || activeTab.sectionType,
+      order: activeTab.order,
       isActive: Boolean(activeSection.isActive),
-      eyebrow: activeSection.eyebrow || "",
       title: activeSection.title || "",
       subtitle: activeSection.subtitle || "",
       description: activeSection.description || "",
       ctaLabel: activeSection.ctaLabel || "",
       ctaHref: activeSection.ctaHref || "",
-      theme: activeSection.theme || "light",
-      backgroundColor: activeSection.backgroundColor || "",
-      textColor: activeSection.textColor || "",
-      accentColor: activeSection.accentColor || "",
       imageUrl: activeSection.imageUrl || "",
       mobileImageUrl: activeSection.mobileImageUrl || "",
-      limit: Number(activeSection.limit || 6),
+      limit: Number(activeSection.limit || 8),
+      sourceMode: activeSection.sourceMode || "all",
       categoryIds: (activeSection.categoryIds || []).map(String),
+      vendorIds: (activeSection.vendorIds || []).map(String),
       productIds: (activeSection.productIds || []).map(String),
       items: (activeSection.items || []).map((item) => ({
-        eyebrow: item.eyebrow || "",
         title: item.title || "",
-        subtitle: item.subtitle || "",
         description: item.description || "",
         label: item.label || "",
         href: item.href || "",
         imageUrl: item.imageUrl || "",
-        mobileImageUrl: item.mobileImageUrl || "",
-        backgroundColor: item.backgroundColor || "",
-        textColor: item.textColor || "",
-        accentColor: item.accentColor || "",
-        badge: item.badge || ""
+        mobileImageUrl: item.mobileImageUrl || ""
       }))
     };
+
+    if (activeTab.productMode) {
+      const sourceMode = activeSection.sourceMode || "all";
+      payload.sourceMode = sourceMode;
+
+      if (sourceMode === "all") {
+        payload.categoryIds = [];
+        payload.vendorIds = [];
+      } else if (sourceMode === "category") {
+        payload.vendorIds = [];
+      } else if (sourceMode === "vendor") {
+        payload.categoryIds = [];
+      }
+    }
+
+    if (activeTab.customLayout === "three_col_category") {
+      payload.title = activeSection.centerTitle || "Discover Categories";
+      payload.items = [
+        {
+          title: activeSection.items?.[0]?.title || "",
+          description: activeSection.items?.[0]?.description || "",
+          label: activeSection.items?.[0]?.label || "",
+          href: activeSection.items?.[0]?.href || ""
+        },
+        {
+          title: activeSection.items?.[1]?.title || "",
+          description: activeSection.items?.[1]?.description || "",
+          label: activeSection.items?.[1]?.label || "",
+          href: activeSection.items?.[1]?.href || ""
+        }
+      ];
+    }
+
+    if (activeTab.customLayout === "promo_showcase") {
+      payload.items = [
+        { title: activeSection.items?.[0]?.title || "" },
+        { title: activeSection.items?.[1]?.title || "" }
+      ];
+    }
 
     try {
       setSaving(true);
       setPageError("");
+
       const response = activeSection.isDraft
         ? await marketplaceApi.createAdminHomeSection(token, payload)
         : await marketplaceApi.updateAdminHomeSection(token, activeSection._id, payload);
-      const saved = response?.data || response;
-      const nextSaved = { ...saved, isDraft: false };
 
-      setSections((current) => {
-        if (activeSection.isDraft) {
-          return current.map((section) => (String(section._id) === String(activeSection._id) ? nextSaved : section));
-        }
-        return updateSectionList(current, nextSaved);
-      });
-      setActiveSectionId(nextSaved._id);
-      setNotice(`Saved "${nextSaved.name}".`);
+      const saved = { ...(response?.data || response), isDraft: false };
+      setSections((current) =>
+        current.map((section) => (section.slug === activeSection.slug ? saved : section))
+      );
+      setNotice(`Saved "${activeTab.label}".`);
     } catch (error) {
       setPageError(error?.message || "Failed to save section");
     } finally {
@@ -355,352 +546,293 @@ export default function AdminCollectionsPage() {
     }
   }
 
-  async function deleteSection() {
-    if (!activeSection) return;
-    if (!window.confirm(`Delete "${activeSection.name}"?`)) return;
-
-    if (activeSection.isDraft) {
-      const nextSections = sections.filter((section) => String(section._id) !== String(activeSection._id));
-      setSections(nextSections);
-      setActiveSectionId(nextSections[0]?._id || "");
-      return;
-    }
-
-    try {
-      setSaving(true);
-      await marketplaceApi.deleteAdminHomeSection(token, activeSection._id);
-      const nextSections = sections.filter((section) => String(section._id) !== String(activeSection._id));
-      setSections(nextSections);
-      setActiveSectionId(nextSections[0]?._id || "");
-      setNotice("Section deleted.");
-      setPageError("");
-    } catch (error) {
-      setPageError(error?.message || "Failed to delete section");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   return (
     <section className="container page-section stack">
-      <div className="grid gap-3 lg:grid-cols-[1.1fr_auto] lg:items-end">
-        <div>
+      <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1.1fr)_auto] lg:items-end">
+        <div className="min-w-0">
           <div className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#9a6b36]">Admin Panel</div>
-          <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] text-slate-900">Collections</h1>
+          <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] text-slate-900">Home Page</h1>
           <p className="mt-2 max-w-3xl text-slate-600">
-            Build the homepage section-by-section. Each collection is a tab, and each tab has separate editing panels for headings,
-            product/category selection, slide items, and visual styling.
+            Edit homepage section data only. Design, colors, and layout stay fixed in code. Use each tab to choose headings, descriptions, buttons, categories, products, or banner images.
           </p>
         </div>
-
-        <button
-          type="button"
-          onClick={createSection}
-          className="inline-flex h-12 items-center justify-center rounded-2xl bg-[#111111] px-5 text-sm font-semibold text-white"
-        >
-          Add Section Tab
-        </button>
       </div>
 
       {authError ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">{authError}</div> : null}
       {pageError ? <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">{pageError}</div> : null}
       {notice ? <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800">{notice}</div> : null}
 
-      <div className="rounded-[30px] border border-black/6 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
+      <div className="overflow-hidden rounded-[30px] border border-black/6 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
         <div className="border-b border-black/6 p-4">
-          <div className="flex gap-2 overflow-x-auto">
-            {sections.map((section, index) => {
-              const isActive = String(section._id) === String(activeSectionId);
+          <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "thin" }}>
+            {HOME_TABS.map((tab, index) => {
+              const isActive = tab.slug === activeSlug;
+              const section = sections.find((entry) => entry.slug === tab.slug);
               return (
                 <button
-                  key={section._id}
+                  key={tab.slug}
                   type="button"
-                  onClick={() => setActiveSectionId(section._id)}
-                  className={`min-w-[220px] rounded-[22px] border px-4 py-3 text-left transition ${isActive
-                      ? "border-[#0a5a46] bg-[#edf7f2] shadow-[0_12px_30px_rgba(10,90,70,0.12)]"
-                      : "border-black/8 bg-[#faf7f2] hover:bg-[#f4efe8]"
-                    }`}
+                  onClick={() => setActiveSlug(tab.slug)}
+                  className={`min-w-[160px] shrink-0 rounded-[22px] border px-4 py-3 text-left transition sm:min-w-[190px] ${isActive ? "border-[#0a5a46] bg-[#edf7f2]" : "border-black/8 bg-[#faf7f2] hover:bg-[#f4efe8]"}`}
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Section {index + 1}</span>
-                    <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${section.isActive ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"}`}>
-                      {section.isActive ? "Active" : "Hidden"}
-                    </span>
-                  </div>
-                  <div className="mt-2 truncate text-base font-black text-slate-900">{section.name || "Untitled section"}</div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Section {index + 1}</div>
+                  <div className="mt-2 text-base font-black text-slate-900">{tab.label}</div>
                   <div className="mt-1 text-xs text-slate-500">
-                    {SECTION_TYPES.find((entry) => entry.value === section.sectionType)?.label || section.sectionType}
+                    {section?.isDraft ? "Not saved yet" : section?.isActive ? "Active" : "Hidden"}
                   </div>
                 </button>
               );
             })}
-
-            {!sections.length && !loading ? (
-              <div className="rounded-[22px] border border-dashed border-black/10 bg-[#faf7f2] px-5 py-4 text-sm text-slate-500">
-                No homepage sections yet. Create the first section tab.
-              </div>
-            ) : null}
           </div>
         </div>
 
         {loading ? (
-          <div className="p-8 text-sm text-slate-500">Loading collections...</div>
+          <div className="p-8 text-sm text-slate-500">Loading homepage sections...</div>
         ) : activeSection ? (
-          <>
-            <div className="border-b border-black/6 px-4 pt-4">
-              <div className="flex gap-2 overflow-x-auto">
-                {EDITOR_TABS.map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setActiveEditorTab(tab.id)}
-                    className={`rounded-t-2xl px-4 py-3 text-sm font-semibold transition ${activeEditorTab === tab.id
-                        ? "bg-[#111111] text-white"
-                        : "bg-[#f4efe8] text-slate-600 hover:bg-[#ece4d9]"
-                      }`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
+          <div className="grid min-w-0 gap-6 p-4 sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="min-w-0">
+                <h2 className="text-2xl font-black text-slate-900">{activeTab.label}</h2>
+                <p className="mt-1 text-sm text-slate-500">Only the content fields used by this section are shown here.</p>
               </div>
+
+              <label className="inline-flex items-center gap-3 rounded-2xl border border-black/8 bg-[#faf7f2] px-4 py-3 text-sm font-semibold text-slate-800">
+                <input
+                  type="checkbox"
+                  checked={Boolean(activeSection.isActive)}
+                  onChange={(event) => updateActiveSection({ isActive: event.target.checked })}
+                  className="h-4 w-4 rounded border-black/20"
+                />
+                Show Section
+              </label>
             </div>
 
-            <div className="grid gap-6 p-6">
-              {activeEditorTab === "details" ? (
-                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-                  <Field label="Section Name">
-                    <TextInput value={activeSection.name || ""} onChange={(event) => setSectionField("name", event.target.value)} />
-                  </Field>
-                  <Field label="Slug">
-                    <TextInput value={activeSection.slug || ""} onChange={(event) => setSectionField("slug", generateSlug(event.target.value))} />
-                  </Field>
-                  <Field label="Section Type">
-                    <select
-                      value={activeSection.sectionType}
-                      onChange={(event) => handleTypeChange(event.target.value)}
-                      className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#0a5a46]"
-                    >
-                      {SECTION_TYPES.map((option) => (
-                        <option key={option.value} value={option.value}>{option.label}</option>
-                      ))}
-                    </select>
-                  </Field>
-                  <Field label="Order">
-                    <TextInput type="number" value={activeSection.order ?? 0} onChange={(event) => setSectionField("order", Number(event.target.value || 0))} />
-                  </Field>
-                  <Field label="Limit" hint="Used when the section auto-fills products by category.">
-                    <TextInput type="number" min="1" max="24" value={activeSection.limit ?? 6} onChange={(event) => setSectionField("limit", Number(event.target.value || 6))} />
-                  </Field>
-                  <Field label="Theme">
-                    <TextInput value={activeSection.theme || ""} onChange={(event) => setSectionField("theme", event.target.value)} placeholder="light or dark" />
-                  </Field>
-                  <label className="flex items-center gap-3 rounded-[24px] border border-black/8 bg-[#faf7f2] px-4 py-4 text-sm font-semibold text-slate-800">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(activeSection.isActive)}
-                      onChange={(event) => setSectionField("isActive", event.target.checked)}
-                      className="h-4 w-4 rounded border-black/20"
-                    />
-                    Show this section on the homepage
-                  </label>
-                </div>
-              ) : null}
-
-              {activeEditorTab === "content" ? (
-                <div className="grid gap-5 lg:grid-cols-2">
-                  <Field label="Eyebrow">
-                    <TextInput value={activeSection.eyebrow || ""} onChange={(event) => setSectionField("eyebrow", event.target.value)} />
-                  </Field>
+            {activeTab.fields.includes("title") || activeTab.fields.includes("description") || activeTab.fields.includes("button") ? (
+              <div className="grid min-w-0 gap-5 lg:grid-cols-2">
+                {activeTab.fields.includes("title") ? (
                   <Field label="Heading">
-                    <TextInput value={activeSection.title || ""} onChange={(event) => setSectionField("title", event.target.value)} />
+                    <TextInput value={activeSection.title || ""} onChange={(event) => updateActiveSection({ title: event.target.value })} />
                   </Field>
-                  <Field label="Subtitle">
-                    <TextArea rows={3} value={activeSection.subtitle || ""} onChange={(event) => setSectionField("subtitle", event.target.value)} />
-                  </Field>
+                ) : null}
+
+                {activeTab.fields.includes("description") ? (
                   <Field label="Description">
-                    <TextArea rows={5} value={activeSection.description || ""} onChange={(event) => setSectionField("description", event.target.value)} />
+                    <TextArea rows={4} value={activeSection.description || activeSection.subtitle || ""} onChange={(event) => updateActiveSection({ description: event.target.value, subtitle: event.target.value })} />
                   </Field>
-                  <Field label="CTA Label">
-                    <TextInput value={activeSection.ctaLabel || ""} onChange={(event) => setSectionField("ctaLabel", event.target.value)} />
-                  </Field>
-                  <Field label="CTA Link">
-                    <TextInput value={activeSection.ctaHref || ""} onChange={(event) => setSectionField("ctaHref", event.target.value)} placeholder="/products" />
-                  </Field>
-                </div>
-              ) : null}
+                ) : null}
 
-              {activeEditorTab === "links" ? (
-                <div className="grid gap-5 xl:grid-cols-2">
-                  <div className="grid gap-3">
-                    <TextInput
-                      value={productSearch}
-                      onChange={(event) => setProductSearch(event.target.value)}
-                      placeholder="Search products"
-                    />
-                    <SelectableList
-                      title="Products"
-                      items={filteredProducts}
-                      selectedIds={(activeSection.productIds || []).map(String)}
-                      onToggle={(id) => toggleRelation("productIds", id)}
-                      emptyMessage="No products found."
-                      getLabel={(product) => product.name || "Unnamed product"}
-                    />
+                {activeTab.fields.includes("button") ? (
+                  <>
+                    <Field label="Button Label">
+                      <TextInput value={activeSection.ctaLabel || ""} onChange={(event) => updateActiveSection({ ctaLabel: event.target.value })} />
+                    </Field>
+                    <Field label="Button Link">
+                      <TextInput value={activeSection.ctaHref || ""} onChange={(event) => updateActiveSection({ ctaHref: event.target.value })} placeholder="/products" />
+                    </Field>
+                  </>
+                ) : null}
+
+                {activeTab.fields.includes("product_settings") ? (
+                  <>
+                    <Field label="Display Type">
+                      <select
+                        value={activeSection.sectionType || "product_carousel"}
+                        onChange={(event) => updateActiveSection({ sectionType: event.target.value })}
+                        className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-[#0a5a46]"
+                      >
+                        <option value="product_carousel">Carousel</option>
+                        <option value="product_grid">Grid</option>
+                      </select>
+                    </Field>
+                    <Field label="Products Limit">
+                      <TextInput
+                        type="number"
+                        min="1"
+                        max="24"
+                        value={activeSection.limit ?? 8}
+                        onChange={(event) => updateActiveSection({ limit: Number(event.target.value || 8) })}
+                      />
+                    </Field>
+                  </>
+                ) : null}
+              </div>
+            ) : null}
+
+            {activeTab.customLayout === "three_col_category" ? (
+              <div className="grid min-w-0 gap-5">
+                <Field label="Center Heading">
+                  <TextInput value={activeSection.centerTitle || activeSection.title || ""} onChange={(event) => updateActiveSection({ centerTitle: event.target.value, title: event.target.value })} />
+                </Field>
+
+                <div className="grid min-w-0 gap-5 lg:grid-cols-2">
+                  <div className="grid min-w-0 gap-4 rounded-[24px] border border-black/8 bg-[#fcfaf7] p-4">
+                    <div className="text-base font-black text-slate-900">Left Content</div>
+                    <Field label="Heading">
+                      <TextInput value={activeSection.items?.[0]?.title || ""} onChange={(event) => updateItem(0, { title: event.target.value })} />
+                    </Field>
+                    <Field label="Description">
+                      <TextArea rows={4} value={activeSection.items?.[0]?.description || ""} onChange={(event) => updateItem(0, { description: event.target.value })} />
+                    </Field>
+                    <Field label="Button Label">
+                      <TextInput value={activeSection.items?.[0]?.label || ""} onChange={(event) => updateItem(0, { label: event.target.value })} />
+                    </Field>
+                    <Field label="Button Link">
+                      <TextInput value={activeSection.items?.[0]?.href || ""} onChange={(event) => updateItem(0, { href: event.target.value })} />
+                    </Field>
                   </div>
 
-                  <div className="grid gap-3">
-                    <TextInput
-                      value={categorySearch}
-                      onChange={(event) => setCategorySearch(event.target.value)}
-                      placeholder="Search categories"
-                    />
-                    <SelectableList
-                      title="Categories"
-                      items={filteredCategories}
-                      selectedIds={(activeSection.categoryIds || []).map(String)}
-                      onToggle={(id) => toggleRelation("categoryIds", id)}
-                      emptyMessage="No categories found."
-                      getLabel={(category) => category.name || "Unnamed category"}
-                    />
+                  <div className="grid min-w-0 gap-4 rounded-[24px] border border-black/8 bg-[#fcfaf7] p-4">
+                    <div className="text-base font-black text-slate-900">Right Content</div>
+                    <Field label="Heading">
+                      <TextInput value={activeSection.items?.[1]?.title || ""} onChange={(event) => updateItem(1, { title: event.target.value })} />
+                    </Field>
+                    <Field label="Description">
+                      <TextArea rows={4} value={activeSection.items?.[1]?.description || ""} onChange={(event) => updateItem(1, { description: event.target.value })} />
+                    </Field>
+                    <Field label="Button Label">
+                      <TextInput value={activeSection.items?.[1]?.label || ""} onChange={(event) => updateItem(1, { label: event.target.value })} />
+                    </Field>
+                    <Field label="Button Link">
+                      <TextInput value={activeSection.items?.[1]?.href || ""} onChange={(event) => updateItem(1, { href: event.target.value })} />
+                    </Field>
                   </div>
                 </div>
-              ) : null}
+              </div>
+            ) : null}
 
-              {activeEditorTab === "items" ? (
+            {activeTab.customLayout === "promo_showcase" ? (
+              <div className="grid min-w-0 gap-5 lg:grid-cols-2">
+                <Field label="Left Heading">
+                  <TextInput value={activeSection.items?.[0]?.title || ""} onChange={(event) => updateItem(0, { title: event.target.value })} />
+                </Field>
+                <Field label="Right Heading">
+                  <TextInput value={activeSection.items?.[1]?.title || ""} onChange={(event) => updateItem(1, { title: event.target.value })} />
+                </Field>
+              </div>
+            ) : null}
+
+            {activeTab.productMode ? (
+              <div className="grid gap-5">
+                <div className="grid gap-3 rounded-[24px] border border-black/8 bg-[#fcfaf7] p-4">
+                  <div className="text-sm font-semibold text-slate-900">Product Source</div>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { value: "all", label: "All Products" },
+                      { value: "category", label: "By Category" },
+                      { value: "vendor", label: "By Vendor" }
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => updateActiveSection({ sourceMode: option.value, productIds: [] })}
+                        className={`rounded-2xl border px-4 py-2.5 text-sm font-semibold transition ${((activeSection.sourceMode || "all") === option.value)
+                          ? "border-[#0a5a46] bg-[#edf7f2] text-[#0a5a46]"
+                          : "border-black/10 bg-white text-slate-700 hover:bg-[#f8f5f1]"}`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {(activeSection.sourceMode || "all") === "category" ? (
+                  <SelectList
+                    title="Category Selection"
+                    items={filteredCategories}
+                    selectedIds={(activeSection.categoryIds || []).map(String)}
+                    onToggle={(id) => toggleRelation("categoryIds", id)}
+                    getLabel={(category) => category.name || "Unnamed category"}
+                    emptyMessage="No categories found."
+                    search={categorySearch}
+                    onSearch={setCategorySearch}
+                  />
+                ) : null}
+
+                {(activeSection.sourceMode || "all") === "vendor" ? (
+                  <SelectList
+                    title="Vendor Selection"
+                    items={filteredVendors}
+                    selectedIds={(activeSection.vendorIds || []).map(String)}
+                    onToggle={(id) => toggleRelation("vendorIds", id)}
+                    getLabel={(vendor) => vendor.storeName || vendor.name || vendor.email || "Unnamed vendor"}
+                    emptyMessage="No vendors found."
+                    search={vendorSearch}
+                    onSearch={setVendorSearch}
+                  />
+                ) : null}
+
+                <SelectList
+                  title={
+                    (activeSection.sourceMode || "all") === "all"
+                      ? "All Products Selection"
+                      : (activeSection.sourceMode || "all") === "category"
+                        ? "Products From Selected Categories"
+                        : "Products From Selected Vendors"
+                  }
+                  items={filteredProducts}
+                  selectedIds={(activeSection.productIds || []).map(String)}
+                  onToggle={(id) => toggleRelation("productIds", id)}
+                  getLabel={(product) => product.name || "Unnamed product"}
+                  emptyMessage={
+                    (activeSection.sourceMode || "all") === "category"
+                      ? "Select one or more categories first."
+                      : (activeSection.sourceMode || "all") === "vendor"
+                        ? "Select one or more vendors first."
+                        : "No products found."
+                  }
+                  search={productSearch}
+                  onSearch={setProductSearch}
+                />
+              </div>
+            ) : null}
+
+            {activeTab.categoryMode && !activeTab.productMode ? (
+              <SelectList
+                title="Category Selection"
+                items={filteredCategories}
+                selectedIds={(activeSection.categoryIds || []).map(String)}
+                onToggle={(id) => toggleRelation("categoryIds", id)}
+                getLabel={(category) => category.name || "Unnamed category"}
+                emptyMessage="No categories found."
+                search={categorySearch}
+                onSearch={setCategorySearch}
+              />
+            ) : null}
+
+            {activeTab.imageMode ? (
+              <Field label="Banner Image">
                 <div className="grid gap-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-lg font-black text-slate-900">Section Items</div>
-                      <div className="text-sm text-slate-500">Use items for hero slides, banners, split sections, and article cards.</div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={addItem}
-                      className="rounded-2xl border border-black/10 bg-[#faf7f2] px-4 py-2.5 text-sm font-semibold text-slate-900"
-                    >
-                      Add Item
-                    </button>
-                  </div>
+                  <UploadField
+                    value={activeSection.imageUrl || ""}
+                    onChange={(value) => updateActiveSection({ imageUrl: value })}
+                    onUpload={(file) => uploadImage(file, (value) => updateActiveSection({ imageUrl: value }))}
+                    uploading={uploading}
+                  />
 
-                  {!activeSection.items?.length ? (
-                    <div className="rounded-[24px] border border-dashed border-black/10 bg-[#faf7f2] p-6 text-sm text-slate-500">
-                      No items yet. Add slides/cards for this section from the button above.
+                  {activeSection.imageUrl ? (
+                    <div className="overflow-hidden rounded-[24px] border border-black/8 bg-[#fcfaf7] p-3">
+                      <div className="mb-3 text-sm font-semibold text-slate-900">Banner Preview</div>
+                      <div className="overflow-hidden rounded-[18px]">
+                        <img src={activeSection.imageUrl} alt="Banner preview" className="h-[220px] w-full object-cover" />
+                      </div>
                     </div>
                   ) : null}
-
-                  {(activeSection.items || []).map((item, index) => (
-                    <div key={`${activeSection._id}-item-${index}`} className="rounded-[28px] border border-black/8 bg-[#fcfaf7] p-5">
-                      <div className="mb-4 flex items-center justify-between gap-3">
-                        <div className="text-base font-black text-slate-900">Item {index + 1}</div>
-                        <button
-                          type="button"
-                          onClick={() => removeItem(index)}
-                          className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700"
-                        >
-                          Remove
-                        </button>
-                      </div>
-
-                      <div className="grid gap-4 lg:grid-cols-2">
-                        <Field label="Item Eyebrow">
-                          <TextInput value={item.eyebrow || ""} onChange={(event) => setItemField(index, "eyebrow", event.target.value)} />
-                        </Field>
-                        <Field label="Item Title">
-                          <TextInput value={item.title || ""} onChange={(event) => setItemField(index, "title", event.target.value)} />
-                        </Field>
-                        <Field label="Subtitle">
-                          <TextArea rows={3} value={item.subtitle || ""} onChange={(event) => setItemField(index, "subtitle", event.target.value)} />
-                        </Field>
-                        <Field label="Description">
-                          <TextArea rows={3} value={item.description || ""} onChange={(event) => setItemField(index, "description", event.target.value)} />
-                        </Field>
-                        <Field label="Badge">
-                          <TextInput value={item.badge || ""} onChange={(event) => setItemField(index, "badge", event.target.value)} />
-                        </Field>
-                        <Field label="CTA Label">
-                          <TextInput value={item.label || ""} onChange={(event) => setItemField(index, "label", event.target.value)} />
-                        </Field>
-                        <Field label="CTA Link">
-                          <TextInput value={item.href || ""} onChange={(event) => setItemField(index, "href", event.target.value)} />
-                        </Field>
-                        <Field label="Image URL">
-                          <TextInput value={item.imageUrl || ""} onChange={(event) => setItemField(index, "imageUrl", event.target.value)} />
-                        </Field>
-                        <Field label="Mobile Image URL">
-                          <TextInput value={item.mobileImageUrl || ""} onChange={(event) => setItemField(index, "mobileImageUrl", event.target.value)} />
-                        </Field>
-                        <Field label="Background Color">
-                          <TextInput value={item.backgroundColor || ""} onChange={(event) => setItemField(index, "backgroundColor", event.target.value)} />
-                        </Field>
-                        <Field label="Text Color">
-                          <TextInput value={item.textColor || ""} onChange={(event) => setItemField(index, "textColor", event.target.value)} />
-                        </Field>
-                        <Field label="Accent Color">
-                          <TextInput value={item.accentColor || ""} onChange={(event) => setItemField(index, "accentColor", event.target.value)} />
-                        </Field>
-                      </div>
-                    </div>
-                  ))}
                 </div>
-              ) : null}
+              </Field>
+            ) : null}
 
-              {activeEditorTab === "design" ? (
-                <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-                  <Field label="Background Color / Gradient">
-                    <TextInput value={activeSection.backgroundColor || ""} onChange={(event) => setSectionField("backgroundColor", event.target.value)} placeholder="linear-gradient(...)" />
-                  </Field>
-                  <Field label="Text Color">
-                    <TextInput value={activeSection.textColor || ""} onChange={(event) => setSectionField("textColor", event.target.value)} placeholder="#10201a" />
-                  </Field>
-                  <Field label="Accent Color">
-                    <TextInput value={activeSection.accentColor || ""} onChange={(event) => setSectionField("accentColor", event.target.value)} placeholder="#0a5a46" />
-                  </Field>
-                  <Field label="Desktop Image URL">
-                    <TextInput value={activeSection.imageUrl || ""} onChange={(event) => setSectionField("imageUrl", event.target.value)} />
-                  </Field>
-                  <Field label="Mobile Image URL">
-                    <TextInput value={activeSection.mobileImageUrl || ""} onChange={(event) => setSectionField("mobileImageUrl", event.target.value)} />
-                  </Field>
-                  <div className="rounded-[24px] border border-black/8 bg-[#fcfaf7] p-4 text-sm text-slate-600">
-                    Use this tab for section-wide colors and imagery. Item-level colors/images can be edited in the
-                    <span className="font-semibold text-slate-900"> Slides / Items </span>
-                    tab.
-                  </div>
-                </div>
-              ) : null}
-            </div>
-
-            <div className="flex flex-wrap justify-between gap-3 border-t border-black/6 bg-[#faf7f2] px-6 py-4">
+            <div className="flex justify-end border-t border-black/6 pt-4">
               <button
                 type="button"
-                onClick={deleteSection}
+                onClick={saveSection}
                 disabled={saving}
-                className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-700 disabled:opacity-50"
+                className="rounded-2xl bg-[#111111] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
               >
-                Delete Section
+                {saving ? "Saving..." : "Save Section"}
               </button>
-
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => window.history.back()}
-                  className="rounded-2xl border border-black/10 bg-white px-5 py-3 text-sm font-semibold text-slate-900"
-                >
-                  Back
-                </button>
-                <button
-                  type="button"
-                  onClick={saveSection}
-                  disabled={saving}
-                  className="rounded-2xl bg-[#111111] px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
-                >
-                  {saving ? "Saving..." : activeSection.isDraft ? "Create Section" : "Save Changes"}
-                </button>
-              </div>
             </div>
-          </>
-        ) : (
-          <div className="p-8 text-sm text-slate-500">Create a section tab to start editing homepage collections.</div>
-        )}
+          </div>
+        ) : null}
       </div>
     </section>
   );

@@ -94,21 +94,25 @@ export function Footer() {
     {
       icon: "selection",
       title: "Unbeatable Selection",
+      subtitle: "More products and cleaner browsing.",
       href: "/products"
     },
     {
       icon: "support",
-      title: "Expert Customer Service",
+      title: "Customer Service",
+      subtitle: "Fast help for orders and support.",
       href: "/support"
     },
     {
       icon: "truck",
-      title: "Fast & Free Shipping Over $35*",
+      title: "Free Ship Over $35*",
+      subtitle: "Reliable delivery on qualifying orders.",
       href: "/policy/shipping"
     },
     {
       icon: "bag",
-      title: "Amazing Value Every Day",
+      title: "Good Value EveryDay",
+      subtitle: "Better value across every category.",
       href: "/products?sort=popular"
     }
   ];
@@ -128,24 +132,32 @@ export function Footer() {
   return (
     <footer className="mt-5 border-t border-black/8" style={{ background: "linear-gradient(180deg, color-mix(in srgb, var(--background) 84%, var(--white)) 0%, color-mix(in srgb, var(--background) 92%, var(--secondary)) 100%)" }}>
       <div className="shell-container ">
-        <section className="grid gap-4 border-b py-5 border-black/8  md:grid-cols-2 xl:grid-cols-4">
+        <section className="section-reveal grid gap-4 border-b py-5 border-black/8 md:grid-cols-2 xl:grid-cols-4" style={{ "--section-delay": "80ms" }}>
           {serviceCards.map((card) => (
             <Link
               key={card.title}
               href={card.href}
-              className="flex min-h-[110px] flex-col items-center justify-center rounded-[18px] px-5 py-6 text-center transition hover:bg-black/[0.03]"
+              className="group flex min-h-[126px] items-center gap-4 rounded-[22px] border border-transparent bg-white/70 px-3 py-3 text-left transition hover:-translate-y-0.5 hover:border-black/8 hover:bg-white hover:shadow-[0_16px_34px_rgba(15,23,42,0.08)]"
             >
-              <div className="flex h-10 w-10 items-center justify-center text-[var(--primary)]">
+              <div
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] text-[var(--primary)] transition"
+                style={{ background: "color-mix(in srgb, var(--primary) 10%, white)" }}
+              >
                 <FooterIcon type={card.icon} className="h-7 w-7" />
               </div>
-              <h3 className="mt-3 max-w-[17ch] text-[clamp(1.2rem,1.35vw,1.55rem)] font-semibold leading-[1.15] tracking-[-0.02em] text-[var(--black)]">
-                {card.title}
-              </h3>
+              <div className="min-w-0">
+                <h3 className="text-[1.05rem] font-semibold leading-[1.2] tracking-[-0.02em] text-[var(--black)] md:text-[1.12rem]">
+                  {card.title}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-[color-mix(in_srgb,var(--text)_82%,white)]">
+                  {card.subtitle}
+                </p>
+              </div>
             </Link>
           ))}
         </section>
 
-        <section className="mt-8 rounded-[30px] border border-black/8 bg-ink px-6 py-8 text-white shadow-[0_20px_50px_rgba(16,32,26,0.18)] sm:px-8 lg:px-10">
+        <section className="section-reveal mt-8 rounded-[30px] border border-black/8 bg-ink px-6 py-8 text-white shadow-[0_20px_50px_rgba(16,32,26,0.18)] sm:px-8 lg:px-10" style={{ "--section-delay": "160ms" }}>
           <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-white/75">
@@ -160,14 +172,8 @@ export function Footer() {
               </p>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-[22px] border border-white/10 bg-white/6 p-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white">
-                  <FooterIcon type="truck" className="h-4 w-4" />
-                </div>
-                <div className="mt-4 text-sm font-semibold">Fast browsing</div>
-                <div className="mt-2 text-xs leading-6 text-white/65">Search, menus, categories, and product pages built for speed.</div>
-              </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+
               <div className="rounded-[22px] border border-white/10 bg-white/6 p-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white">
                   <FooterIcon type="shield" className="h-4 w-4" />
@@ -186,7 +192,7 @@ export function Footer() {
           </div>
         </section>
 
-        <section className="mt-8 grid gap-8 rounded-[30px] border border-black/8 bg-white/80 p-6 shadow-[0_14px_36px_rgba(16,32,26,0.06)] sm:p-8 lg:grid-cols-[1.1fr_0.7fr_0.7fr_1fr]">
+        <section className="section-reveal mt-8 grid gap-8 rounded-[30px] border border-black/8 bg-white/80 p-6 shadow-[0_14px_36px_rgba(16,32,26,0.06)] sm:p-8 lg:grid-cols-[1.1fr_0.7fr_0.7fr_1fr]" style={{ "--section-delay": "240ms" }}>
           <div>
             <Link href="/" className="font-display text-3xl font-bold tracking-tight text-ink">
               MarketSphere
@@ -246,7 +252,7 @@ export function Footer() {
           </div>
         </section>
 
-        <section className="mt-6 flex flex-col gap-3 border-t border-black/8 py-5 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
+        <section className="section-reveal mt-6 flex flex-col gap-3 border-t border-black/8 py-5 text-sm text-slate-500 md:flex-row md:items-center md:justify-between" style={{ "--section-delay": "300ms" }}>
           <div>&copy; 2026 MarketSphere. Built for modern marketplace storefronts.</div>
           <div className="flex flex-wrap gap-4">
             {policiesLinks.map((link) => (

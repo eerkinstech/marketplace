@@ -1,5 +1,6 @@
-import { useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { getImageSource } from "@/lib/utils/images";
+import MediaLibraryModal from "./MediaLibraryModal";
 
 function ImagesIcon({ className = "" }) {
   return (
@@ -77,45 +78,47 @@ function ZoomIcon({ className = "" }) {
   );
 }
 
-export default function ProductImages({ formData, setFormData }) {
-  const [dragActive, setDragActive] = useState(false);
-  const [previewImage, setPreviewImage] = useState("");
-  const inputRef = useRef(null);
-  const images = formData.images || [];
+function normalizeMediaItem(image, index) {
+  const url = getImageSource(image);
+  if (!url) return null;
 
-  function appendImages(nextImages) {
+  return {
+    id: String(image?._id || image?.id || image?.publicId || `${url}-${index}`),
+    url,
+    alt: image?.alt || "",
+    publicId: image?.publicId || ""
+  };
+}
+
+export default function ProductImages({
+  formData,
+  setFormData,
+  mediaItems = [],
+  mediaError = "",
+  onMediaUpload,
+  onMediaRefresh
+}) {
+  const [previewImage, setPreviewImage] = useState("");
+  const [showMediaModal, setShowMediaModal] = useState(false);
+  const images = formData.images || [];
+  const selectedImages = useMemo(
+    () => images.map(normalizeMediaItem).filter(Boolean),
+    [images]
+  );
+  const availableMediaItems = useMemo(() => {
+    const seen = new Set();
+    return [...selectedImages, ...mediaItems.map(normalizeMediaItem).filter(Boolean)].filter((item) => {
+      if (!item?.url || seen.has(item.url)) return false;
+      seen.add(item.url);
+      return true;
+    });
+  }, [mediaItems, selectedImages]);
+
+  function replaceImages(nextImages) {
     setFormData({
       ...formData,
-      images: [...images, ...nextImages]
+      images: nextImages
     });
-  }
-
-  function handleFiles(fileList) {
-    const files = Array.from(fileList || []).filter((file) => file.type.startsWith("image/"));
-    if (!files.length) {
-      alert("Please select image files only.");
-      return;
-    }
-
-    Promise.all(
-      files.map(
-        (file) =>
-          new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (event) => resolve(String(event.target?.result || ""));
-            reader.onerror = () => reject(new Error(`Failed to read ${file.name}`));
-            reader.readAsDataURL(file);
-          })
-      )
-    )
-      .then((result) => appendImages(result))
-      .catch((error) => alert(error.message));
-  }
-
-  function handleDrop(event) {
-    event.preventDefault();
-    setDragActive(false);
-    handleFiles(event.dataTransfer.files);
   }
 
   function removeImage(index) {
@@ -142,42 +145,36 @@ export default function ProductImages({ formData, setFormData }) {
           <ImagesIcon className="h-5 w-5 text-blue-600" /> Product Images
         </h3>
         <p className="mb-4 text-sm text-gray-600">
-          Upload multiple product images. Hover an image to remove it, or click the center preview icon to open it.
+          Open the media library to choose product images. Upload and drag new files inside the modal, then assign them to this product.
         </p>
       </div>
 
-      <div
-        onDragOver={(event) => {
-          event.preventDefault();
-          setDragActive(true);
-        }}
-        onDragLeave={(event) => {
-          event.preventDefault();
-          setDragActive(false);
-        }}
-        onDrop={handleDrop}
-        className={`cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition duration-200 ${
-          dragActive
-            ? "border-blue-500 bg-blue-50"
-            : "border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100"
-        }`}
-        onClick={() => inputRef.current?.click()}
-        >
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={(event) => {
-            handleFiles(event.target.files);
-            event.target.value = "";
-          }}
-          className="hidden"
-        />
-        <div className="flex flex-col items-center gap-2">
-          <UploadIcon className="h-10 w-10 text-gray-400" />
-          <span className="text-sm font-semibold text-gray-900">Click to upload or drag and drop</span>
-          <span className="text-xs text-gray-500">Upload product media in JPG, PNG, WEBP, GIF, SVG, or AVIF</span>
+      <div className="rounded-[22px] border border-gray-200 bg-[#faf8f4] p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="text-sm font-semibold text-gray-900">Assigned product media</div>
+            <div className="mt-1 text-xs text-gray-500">
+              {images.length ? `${images.length} image${images.length === 1 ? "" : "s"} selected` : "No product images selected yet"}
+            </div>
+            {mediaError ? <div className="mt-2 text-xs text-red-600">{mediaError}</div> : null}
+          </div>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onMediaRefresh}
+              className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-semibold text-gray-700"
+            >
+              Refresh
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowMediaModal(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#1f2937] px-4 py-3 text-sm font-semibold text-white"
+            >
+              <UploadIcon className="h-4 w-4" />
+              Open Media Library
+            </button>
+          </div>
         </div>
       </div>
 
@@ -233,6 +230,24 @@ export default function ProductImages({ formData, setFormData }) {
           <p className="text-sm text-gray-600">No images added yet</p>
         </div>
       )}
+
+      <MediaLibraryModal
+        open={showMediaModal}
+        mode="multiple"
+        title="Product media library"
+        description="Choose the images that should appear on this product. Upload new images here and they will be added to your library."
+        items={availableMediaItems}
+        selectedItems={selectedImages}
+        allowUpload
+        emptyMessage="No media found yet. Upload images to start building this product gallery."
+        uploadLabel="Upload to library"
+        onClose={() => setShowMediaModal(false)}
+        onSave={(selectedItemsList) => {
+          replaceImages(selectedItemsList);
+          setShowMediaModal(false);
+        }}
+        onUpload={onMediaUpload}
+      />
 
       {previewImage ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-6" onClick={() => setPreviewImage("")}>

@@ -58,6 +58,15 @@ function getProductDisplayMetrics(product) {
   };
 }
 
+function getProductTableImage(product) {
+  return (
+    getImageSource(product?.images?.[0]) ||
+    getImageSource(product?.image) ||
+    getImageSource(product?.variantCombinations?.find((variant) => variant?.image)?.image) ||
+    ""
+  );
+}
+
 function parseCsvLine(line) {
   const values = [];
   let current = "";
@@ -414,7 +423,7 @@ export default function AdminProductsPage() {
             {filteredProducts.map((product) => {
               const checked = selectedIds.includes(String(product._id));
               const displayMetrics = getProductDisplayMetrics(product);
-              const productImage = getImageSource(product.images?.[0]);
+              const productImage = getProductTableImage(product);
               return (
                 <tr key={product._id} className="border-b border-[#ece5db] align-top transition hover:bg-[#fcfaf7] last:border-b-0">
                   <td className="px-5 py-6"><input type="checkbox" checked={checked} onChange={() => toggleRow(product._id)} /></td>
@@ -429,7 +438,6 @@ export default function AdminProductsPage() {
                           <span className={`rounded-xl px-3 py-1.5 text-xs font-semibold ${product.status === "approved" ? "bg-emerald-50 text-emerald-700" : product.status === "pending" ? "bg-amber-50 text-amber-700" : "bg-rose-50 text-rose-700"}`}>{product.status}</span>
                           <span className="text-xs text-slate-500">{product.vendorLabel || "Marketplace admin"}</span>
                           <span className="text-xs text-slate-500">{product.category?.name || product.categorySlug || "No category"}</span>
-                          <span className="text-xs text-slate-500">SKU: {product.sku}</span>
                         </div>
                         {product.rejectionReason ? <div className="text-xs text-rose-700">{product.rejectionReason}</div> : null}
                       </div>
@@ -448,7 +456,7 @@ export default function AdminProductsPage() {
                     <div className="mt-2 text-xs text-slate-500">Total stock</div>
                   </td>
                   <td className="px-5 py-6">
-                    <div className="flex flex-wrap gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       <Link className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition hover:bg-slate-50" href={`/admin/products/new?id=${product._id}`} title="Edit product"><Icon name="edit" /></Link>
                       <button className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 transition hover:bg-emerald-100" type="button" onClick={() => setStatus(product._id, "approved")} title="Approve product"><Icon name="check" /></button>
                       <button className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-amber-200 bg-amber-50 text-amber-700 transition hover:bg-amber-100" type="button" onClick={() => setStatus(product._id, "rejected")} title="Reject product"><Icon name="close" /></button>

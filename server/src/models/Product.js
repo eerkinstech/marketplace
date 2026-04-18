@@ -52,7 +52,9 @@ const productSchema = new mongoose.Schema(
     compareAtPrice: Number,
     vendor: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true, index: true },
     category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true, index: true },
+    categories: [{ type: mongoose.Schema.Types.ObjectId, ref: "Category", index: true }],
     categorySlug: { type: String, required: true, index: true },
+    categorySlugs: [{ type: String, index: true }],
     images: [productImageSchema],
     stock: { type: Number, required: true, min: 0 },
     weight: { type: Number, min: 0, default: 0 },
@@ -81,5 +83,7 @@ const productSchema = new mongoose.Schema(
 
 productSchema.index({ vendor: 1, status: 1, createdAt: -1 });
 productSchema.index({ category: 1, status: 1 });
+productSchema.index({ categories: 1, status: 1 });
+productSchema.index({ categorySlugs: 1, status: 1 });
 
 export const Product = mongoose.model("Product", productSchema);

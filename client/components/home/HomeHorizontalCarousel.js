@@ -43,12 +43,12 @@ export function HomeHorizontalCarousel({ children, ariaLabel, stepMode = "viewpo
   }
 
   return (
-    <div className="relative">
-      <div className="absolute right-0 top-[-3.9rem] z-10 hidden items-center gap-2 md:flex">
+    <div className="relative -mt-14 pt-14 md:-mt-16 md:pt-16">
+      <div className="absolute right-0 top-0 z-10 flex items-center gap-2">
         <button
           type="button"
           onClick={() => scrollByAmount("left")}
-          className="flex h-10 w-10 items-center justify-center rounded-full border transition hover:-translate-y-0.5"
+          className="flex h-9 w-9 items-center justify-center rounded-full border transition hover:-translate-y-0.5 md:h-10 md:w-10"
           style={{ borderColor: "var(--color-line)", background: "var(--white)", color: "var(--primary)" }}
           aria-label={`Scroll ${ariaLabel} left`}
         >
@@ -57,7 +57,7 @@ export function HomeHorizontalCarousel({ children, ariaLabel, stepMode = "viewpo
         <button
           type="button"
           onClick={() => scrollByAmount("right")}
-          className="flex h-10 w-10 items-center justify-center rounded-full border transition hover:-translate-y-0.5"
+          className="flex h-9 w-9 items-center justify-center rounded-full border transition hover:-translate-y-0.5 md:h-10 md:w-10"
           style={{ borderColor: "var(--color-line)", background: "var(--white)", color: "var(--primary)" }}
           aria-label={`Scroll ${ariaLabel} right`}
         >

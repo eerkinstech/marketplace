@@ -20,7 +20,7 @@ function ProductCard({ product }) {
     <Link
       href={`/product/${product.slug}`}
       data-carousel-item
-      className="product-card-shell group block min-w-[148px] sm:min-w-[164px] lg:min-w-[184px]"
+      className="product-card-shell group block min-w-[140px] sm:min-w-[164px] lg:min-w-[185px]"
     >
       <div className="product-card-media">
         {image ? (
@@ -35,7 +35,7 @@ function ProductCard({ product }) {
         </div>
       </div>
       <div className="mt-4 px-3 pb-1">
-        <div className="line-clamp-2 text-[18px] font-semibold leading-[1.15] tracking-[-0.03em]" style={{ color: "var(--black)" }}>{product.name}</div>
+        <div className="line-clamp-3 text-xs lg:text-[18px] font-semibold leading-[1.15] tracking-[-0.03em]" style={{ color: "var(--black)" }}>{product.name}</div>
         <div className="mt-3 text-[13px] font-medium" style={{ color: "color-mix(in srgb, var(--text) 68%, transparent)" }}>Lowest Ask</div>
         <div className="mt-1 text-[28px] font-semibold leading-none tracking-[-0.04em]" style={{ color: "var(--black)" }}>{formatCurrency(product.price)}</div>
       </div>
@@ -48,7 +48,7 @@ function CategoryCard({ category }) {
     <Link
       href={`/category/${category.slug}`}
       data-carousel-item
-      className="group flex min-w-[132px] snap-start flex-col items-center gap-3 rounded-[26px] px-2 py-3 text-center transition hover:-translate-y-1 sm:min-w-[136px] lg:min-w-[138px]"
+      className="group flex min-w-[140px] snap-start flex-col items-center gap-3 rounded-[26px] px-2 py-3 text-center transition hover:-translate-y-1 sm:min-w-[138px] lg:min-w-[138px]"
       style={{ color: "var(--text)" }}
     >
       <div
@@ -110,7 +110,7 @@ function SectionHeader({ section }) {
           </div>
         ) : null}
         {section.title ? (
-          <h2 className="text-[28px] font-black tracking-[-0.03em] md:text-[30px]" style={{ color: "var(--text)" }}>
+          <h2 className="max-w-[18ch] text-[20px] font-black tracking-[-0.03em] md:max-w-[11ch] md:text-[30px] lg:max-w-full" style={{ color: "var(--text)" }}>
             {section.title}
           </h2>
         ) : null}
@@ -201,20 +201,64 @@ function PromoFeaturedCategoryCard({ category }) {
 }
 
 function PromoShowcaseSection({ section }) {
-  const leftItems = section.leftItems || [];
-  const rightItems = section.rightItems || [];
+  const categories = section.categories || [];
+  const leftTitle = section.leftTitle || section.items?.[0]?.title || "Top Picks";
+  const rightTitle = section.rightTitle || section.items?.[1]?.title || "Self care";
+  const leftItems = section.leftItems?.length
+    ? section.leftItems
+    : categories.slice(0, 4).map((category) => ({
+      label: category.name,
+      href: `/category/${category.slug}`,
+      imageUrl: category.image
+    }));
+  const rightItems = section.rightItems?.length
+    ? section.rightItems
+    : categories.slice(4, 8).map((category) => ({
+      label: category.name,
+      href: `/category/${category.slug}`,
+      imageUrl: category.image
+    }));
+  const centerCategory = section.centerCategory || categories[8] || categories[0] || null;
 
   return (
     <section className="grid gap-5 xl:grid-cols-[1fr_1.12fr_1fr]">
-      <PromoCollectionCard title={section.leftTitle || "Top Picks"} href={section.leftHref} items={leftItems} />
-      <PromoFeaturedCategoryCard category={section.centerCategory} />
-      <PromoCollectionCard title={section.rightTitle || "Self care"} href={section.rightHref} items={rightItems} />
+      <PromoCollectionCard title={leftTitle} href={section.leftHref} items={leftItems} />
+      <PromoFeaturedCategoryCard category={centerCategory} />
+      <PromoCollectionCard title={rightTitle} href={section.rightHref} items={rightItems} />
+    </section>
+  );
+}
+
+function ImageBannerSection({ section }) {
+  const bannerImage = section.imageUrl || section.images?.[0]?.imageUrl;
+
+  return (
+    <section
+      className="overflow-hidden rounded-[28px] border"
+      style={{
+        background: "color-mix(in srgb, var(--secondary) 16%, var(--white))",
+        borderColor: "var(--color-line)",
+        boxShadow: "var(--home-shadow)"
+      }}
+    >
+      <div className="h-[250px] overflow-hidden">
+        {bannerImage ? (
+          <img src={bannerImage} alt={section.title || "Banner"} className="h-full w-full object-cover" />
+        ) : null}
+      </div>
     </section>
   );
 }
 
 function CategoryShowcaseMosaic({ section }) {
-  const items = (section.items || []).slice(0, 8);
+  const items = (section.items?.length
+    ? section.items
+    : (section.categories || []).map((category) => ({
+      title: category.name,
+      href: `/category/${category.slug}`,
+      imageUrl: category.image
+    }))
+  ).slice(0, 8);
   if (!items.length) return null;
 
   return (
@@ -280,6 +324,8 @@ function CategoryShowcaseMosaic({ section }) {
 
 function ThreeColumnCategorySection({ section }) {
   const categories = section.categories || [];
+  const leftContent = section.items?.[0] || {};
+  const rightContent = section.items?.[1] || {};
 
   return (
     <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,2fr)_minmax(0,1fr)]">
@@ -291,20 +337,20 @@ function ThreeColumnCategorySection({ section }) {
           boxShadow: "var(--home-shadow)"
         }}
       >
-        {section.leftEyebrow ? (
+        {(leftContent.eyebrow || section.leftEyebrow) ? (
           <div className="text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: "var(--primary)" }}>
-            {section.leftEyebrow}
+            {leftContent.eyebrow || section.leftEyebrow}
           </div>
         ) : null}
         <h3 className="mt-3 text-[25px] font-black leading-[1.02] tracking-[-0.04em]" style={{ color: "var(--text)" }}>
-          {section.leftTitle}
+          {leftContent.title || section.leftTitle || "Browse category"}
         </h3>
         <p className="mt-4 text-[15px] leading-7" style={{ color: "color-mix(in srgb, var(--text) 78%, var(--white))" }}>
-          {section.leftContent}
+          {leftContent.description || section.leftContent}
         </p>
-        {section.leftHref ? (
-          <Link href={section.leftHref} className="mt-6 inline-flex text-sm font-bold underline underline-offset-4" style={{ color: "var(--primary)" }}>
-            {section.leftLabel || "Explore now"}
+        {(leftContent.href || section.leftHref) ? (
+          <Link href={leftContent.href || section.leftHref} className="mt-6 inline-flex text-sm font-bold underline underline-offset-4" style={{ color: "var(--primary)" }}>
+            {leftContent.label || section.leftLabel || "Explore now"}
           </Link>
         ) : null}
       </article>
@@ -324,8 +370,8 @@ function ThreeColumnCategorySection({ section }) {
                 {section.centerEyebrow}
               </div>
             ) : null}
-            <h3 className="mt-2 text-[28px] font-black tracking-[-0.03em]" style={{ color: "var(--text)" }}>
-              {section.centerTitle}
+            <h3 className="mt-2 text-[18px] font-black tracking-[-0.03em]" style={{ color: "var(--text)" }}>
+              {section.centerTitle || section.title}
             </h3>
           </div>
         </div>
@@ -343,20 +389,20 @@ function ThreeColumnCategorySection({ section }) {
           boxShadow: "var(--home-shadow)"
         }}
       >
-        {section.rightEyebrow ? (
+        {(rightContent.eyebrow || section.rightEyebrow) ? (
           <div className="text-[11px] font-semibold uppercase tracking-[0.24em]" style={{ color: "var(--primary)" }}>
-            {section.rightEyebrow}
+            {rightContent.eyebrow || section.rightEyebrow}
           </div>
         ) : null}
         <h3 className="mt-3 text-[25px] font-black leading-[1.02] tracking-[-0.04em]" style={{ color: "var(--text)" }}>
-          {section.rightTitle}
+          {rightContent.title || section.rightTitle || "Find the right Product"}
         </h3>
         <p className="mt-4 text-[15px] leading-7" style={{ color: "color-mix(in srgb, var(--text) 78%, var(--white))" }}>
-          {section.rightContent}
+          {rightContent.description || section.rightContent}
         </p>
-        {section.rightHref ? (
-          <Link href={section.rightHref} className="mt-6 inline-flex text-sm font-bold underline underline-offset-4" style={{ color: "var(--primary)" }}>
-            {section.rightLabel || "Learn more"}
+        {(rightContent.href || section.rightHref) ? (
+          <Link href={rightContent.href || section.rightHref} className="mt-6 inline-flex text-sm font-bold underline underline-offset-4" style={{ color: "var(--primary)" }}>
+            {rightContent.label || section.rightLabel || "Learn more"}
           </Link>
         ) : null}
       </article>
@@ -437,6 +483,10 @@ function renderSection(section) {
     return <PromoShowcaseSection section={section} />;
   }
 
+  if (section.sectionType === "image_banner") {
+    return <ImageBannerSection section={section} />;
+  }
+
   if (section.sectionType === "category_mosaic") {
     return <CategoryShowcaseMosaic section={section} />;
   }
@@ -484,6 +534,7 @@ function renderSection(section) {
 
 function buildFallbackSections(items, categories) {
   const featuredCategories = categories;
+  const selectProducts = (start, count) => items.slice(start, start + count);
   const leftPromoItems = categories.slice(0, 4).map((category) => ({
     label: category.name,
     href: `/category/${category.slug}`,
@@ -500,6 +551,10 @@ function buildFallbackSections(items, categories) {
     href: `/category/${category.slug}`,
     imageUrl: category.image
   }));
+  const recommendedProducts = selectProducts(0, 8);
+  const trendingProducts = selectProducts(4, 8);
+  const latestProducts = selectProducts(2, 6);
+  const curatedProducts = selectProducts(6, 6);
 
   return [
     {
@@ -565,6 +620,14 @@ function buildFallbackSections(items, categories) {
       categories: featuredCategories
     },
     {
+      _id: "fallback-products-1",
+      sectionType: "product_carousel",
+      title: "Recommended For You",
+      ctaLabel: "See all",
+      ctaHref: "/products",
+      products: recommendedProducts
+    },
+    {
       _id: "fallback-three-col-category",
       sectionType: "three_col_category",
       leftEyebrow: "Shop better",
@@ -582,20 +645,18 @@ function buildFallbackSections(items, categories) {
       rightLabel: "Browse products"
     },
     {
-      _id: "fallback-products-1",
-      sectionType: "product_carousel",
-      title: "Recommended For You",
-      ctaLabel: "See all",
-      ctaHref: "/products",
-      products: items.slice(0, 12)
+      _id: "fallback-image-banner-1",
+      sectionType: "image_banner",
+      title: "Garden banner",
+      imageUrl: "https://assets.wfcdn.com/im/56560387/resize-h454-w2000%5Ecompr-r85/4186/418679031/get_your_garden_ready._total_beginner%3F_seasoned_green_thumb%3F_we%27ve_got_you._418679031.jpg"
     },
     {
       _id: "fallback-products-2",
-      sectionType: "product_grid",
+      sectionType: "product_carousel",
       title: "Trending Products",
       ctaLabel: "Shop all",
       ctaHref: "/products?sort=popular",
-      products: items.slice(12, 24)
+      products: selectProducts(0, 8)
     },
     {
       _id: "fallback-category-mosaic",
@@ -604,6 +665,14 @@ function buildFallbackSections(items, categories) {
       title: "Explore Categories By Space",
       subtitle: "Browse refined category collections through a more visual home edit.",
       items: categoryMosaicItems
+    },
+    {
+      _id: "fallback-products-3",
+      sectionType: "product_carousel",
+      title: "Latest Market Picks",
+      ctaLabel: "Browse all",
+      ctaHref: "/products?sort=newest",
+      products: latestProducts
     },
     {
       _id: "fallback-promo-showcase",
@@ -615,8 +684,56 @@ function buildFallbackSections(items, categories) {
       rightTitle: "Self care",
       rightHref: "/category/beauty-skincare",
       rightItems: rightPromoItems
+    },
+    {
+      _id: "fallback-products-4",
+      sectionType: "product_carousel",
+      title: "Curated Essentials",
+      ctaLabel: "Explore more",
+      ctaHref: "/products",
+      products: selectProducts(0, 12)
+    },
+    {
+      _id: "fallback-image-banner-2",
+      sectionType: "image_banner",
+      title: "Outdoor banner",
+      imageUrl: "https://assets.wfcdn.com/im/79262213/resize-h454-w2000%5Ecompr-r85/4186/418679033/greetings_from_the_outdoor_shop%2C_create_your_own_private_paradise_with_our_staycation_essentials._418679033.jpg"
     }
   ];
+}
+
+function insertMidHomeCarousel(sections = [], items = []) {
+  if (!Array.isArray(sections) || !sections.length) return sections;
+
+  const hasInjectedCarousel = sections.some(
+    (section) =>
+      section?._id === "injected-mid-product-carousel" ||
+      section?.slug === "home-mid-product-carousel"
+  );
+  if (hasInjectedCarousel) return sections;
+
+  const threeColIndex = sections.findIndex((section) => section?.sectionType === "three_col_category");
+  if (threeColIndex === -1) return sections;
+
+  const bannerIndex = sections.findIndex((section, index) => index > threeColIndex && section?.sectionType === "image_banner");
+  if (bannerIndex === -1) return sections;
+
+  const fallbackProducts = items.slice(8, 16).length ? items.slice(8, 16) : items.slice(0, 8);
+  if (!fallbackProducts.length) return sections;
+
+  const nextSections = [...sections];
+  nextSections.splice(bannerIndex, 0, {
+    _id: "injected-mid-product-carousel",
+    slug: "home-mid-product-carousel",
+    sectionType: "product_carousel",
+    title: "More Products To Explore",
+    subtitle: "Fresh product picks placed right before the banner break.",
+    ctaLabel: "View all",
+    ctaHref: "/products",
+    products: fallbackProducts
+  });
+
+  return nextSections;
 }
 
 export default async function Home() {
@@ -627,8 +744,13 @@ export default async function Home() {
   ]);
 
   const items = productData.items || [];
-  const homeSections = homeSectionsData?.length ? homeSectionsData : buildFallbackSections(items, categories);
   const isApiOffline = items.length === 0 && categories.length === 0 && (!homeSectionsData || homeSectionsData.length === 0);
+  const baseHomeSections = homeSectionsData?.length
+    ? homeSectionsData
+    : isApiOffline
+      ? buildFallbackSections(items, categories)
+      : [];
+  const homeSections = insertMidHomeCarousel(baseHomeSections, items);
 
   return (
     <section className="py-3 pb-5 md:py-5 md:pb-5" style={{ background: "var(--white)" }}>
@@ -641,7 +763,11 @@ export default async function Home() {
 
         <div className="flex flex-col gap-5">
           {homeSections.map((section, index) => (
-            <div key={section._id || section.slug || `section-${index}`} className="py-1">
+            <div
+              key={section._id || section.slug || `section-${index}`}
+              className="section-reveal py-1"
+              style={{ "--section-delay": `${Math.min(index * 90, 520)}ms` }}
+            >
               {renderSection(section)}
             </div>
           ))}

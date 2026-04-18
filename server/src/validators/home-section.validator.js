@@ -26,7 +26,11 @@ export const homeSectionSchema = z.object({
     "product_grid",
     "banner",
     "split_banner",
-    "article_grid"
+    "article_grid",
+    "promo_showcase",
+    "category_mosaic",
+    "three_col_category",
+    "image_banner"
   ]),
   order: z.number().int().min(0).optional(),
   isActive: z.boolean().optional(),
@@ -43,7 +47,9 @@ export const homeSectionSchema = z.object({
   imageUrl: z.string().optional(),
   mobileImageUrl: z.string().optional(),
   limit: z.number().int().min(1).max(24).optional(),
+  sourceMode: z.enum(["all", "manual", "category", "vendor"]).optional(),
   categoryIds: z.array(z.string()).optional(),
+  vendorIds: z.array(z.string()).optional(),
   productIds: z.array(z.string()).optional(),
   items: z.array(homeSectionItemSchema).optional()
 });

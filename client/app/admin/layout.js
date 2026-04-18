@@ -9,12 +9,12 @@ export const metadata = {
 export default function AdminLayout({ children }) {
   return (
     <AdminAccessGate>
-      <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-slate-50 via-slate-50 to-blue-50">
+      <div className="h-screen overflow-hidden bg-gradient-to-br from-slate-50 via-slate-50 to-blue-50">
         <AdminSidebar />
 
-        <div className="min-h-screen lg:pl-72">
-          <div className="border-b border-slate-200 bg-white/80 backdrop-blur-sm sticky top-0 z-20 shadow-sm">
-            <div className="px-8 py-4 flex items-center justify-between">
+        <div className="flex h-screen flex-col lg:ml-72">
+          <div className="sticky top-0 z-20 border-b border-slate-200 bg-white/88 backdrop-blur-md shadow-sm">
+            <div className="flex items-center justify-between px-5 py-4 lg:px-8">
               <h1 className="text-2xl font-bold text-slate-900">Marketplace Admin</h1>
               <div className="flex items-center gap-4">
                 <div className="text-sm text-slate-600">
@@ -24,8 +24,8 @@ export default function AdminLayout({ children }) {
             </div>
           </div>
 
-          <div className="flex-1 overflow-auto">
-            <div className="min-w-0 p-6 lg:p-8">{children}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="min-w-0 p-5 lg:p-8">{children}</div>
           </div>
         </div>
       </div>

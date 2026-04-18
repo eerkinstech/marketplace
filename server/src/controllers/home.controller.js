@@ -26,7 +26,9 @@ function normalizeSectionPayload(payload) {
     imageUrl: payload.imageUrl || "",
     mobileImageUrl: payload.mobileImageUrl || "",
     limit: Number(payload.limit || 6),
+    sourceMode: payload.sourceMode || "all",
     categoryIds: Array.isArray(payload.categoryIds) ? payload.categoryIds.filter(Boolean) : [],
+    vendorIds: Array.isArray(payload.vendorIds) ? payload.vendorIds.filter(Boolean) : [],
     productIds: Array.isArray(payload.productIds) ? payload.productIds.filter(Boolean) : [],
     items: Array.isArray(payload.items) ? payload.items.map((item) => ({
       eyebrow: item.eyebrow || "",
@@ -47,6 +49,8 @@ function normalizeSectionPayload(payload) {
 
 async function buildSectionResponse(section) {
   const data = section.toObject ? section.toObject() : section;
+  const sourceMode = data.sourceMode || "all";
+  const isAllMode = sourceMode === "all" || sourceMode === "manual";
 
   let categories = [];
   if (Array.isArray(data.categoryIds) && data.categoryIds.length) {
@@ -56,14 +60,42 @@ async function buildSectionResponse(section) {
   }
 
   let selectedProducts = [];
+
+  const baseProductQuery = { status: "approved" };
+  if (sourceMode === "vendor" && Array.isArray(data.vendorIds) && data.vendorIds.length) {
+    baseProductQuery.vendor = { $in: data.vendorIds };
+  }
+  if (sourceMode === "category" && Array.isArray(data.categoryIds) && data.categoryIds.length) {
+    baseProductQuery.category = { $in: data.categoryIds };
+  }
+
   if (Array.isArray(data.productIds) && data.productIds.length) {
-    const products = await Product.find({ _id: { $in: data.productIds }, status: "approved" })
+    const products = await Product.find({ ...baseProductQuery, _id: { $in: data.productIds } })
       .populate("vendor", "storeName storeSlug")
       .populate("category", "name slug")
       .lean();
     const productMap = new Map(products.map((product) => [String(product._id), product]));
     selectedProducts = data.productIds.map((id) => productMap.get(String(id))).filter(Boolean);
+    if (selectedProducts.length > Number(data.limit || 6)) {
+      selectedProducts = selectedProducts.slice(0, Number(data.limit || 6));
+    }
   } else if (
+    sourceMode === "vendor" &&
+    Array.isArray(data.vendorIds) &&
+    data.vendorIds.length &&
+    ["product_carousel", "product_grid"].includes(data.sectionType)
+  ) {
+    selectedProducts = await Product.find({
+      status: "approved",
+      vendor: { $in: data.vendorIds }
+    })
+      .sort("-isFeatured -createdAt")
+      .limit(Number(data.limit || 6))
+      .populate("vendor", "storeName storeSlug")
+      .populate("category", "name slug")
+      .lean();
+  } else if (
+    sourceMode === "category" &&
     Array.isArray(data.categoryIds) &&
     data.categoryIds.length &&
     ["product_carousel", "product_grid"].includes(data.sectionType)
@@ -72,6 +104,16 @@ async function buildSectionResponse(section) {
       status: "approved",
       category: { $in: data.categoryIds }
     })
+      .sort("-isFeatured -createdAt")
+      .limit(Number(data.limit || 6))
+      .populate("vendor", "storeName storeSlug")
+      .populate("category", "name slug")
+      .lean();
+  } else if (
+    isAllMode &&
+    ["product_carousel", "product_grid"].includes(data.sectionType)
+  ) {
+    selectedProducts = await Product.find(baseProductQuery)
       .sort("-isFeatured -createdAt")
       .limit(Number(data.limit || 6))
       .populate("vendor", "storeName storeSlug")
