@@ -1168,6 +1168,13 @@ async function seedMenuSettings() {
     }
   ];
 
+  const footerFirstMenu = [
+    { id: "footer_first_all_products", label: "All Products", url: "/products", link: "/products", type: "custom", submenu: [] },
+    { id: "footer_first_categories", label: "Categories", url: "/categories", link: "/categories", type: "custom", submenu: [] },
+    { id: "footer_first_cart", label: "Cart", url: "/cart", link: "/cart", type: "custom", submenu: [] },
+    { id: "footer_first_checkout", label: "Checkout", url: "/checkout", link: "/checkout", type: "custom", submenu: [] }
+  ];
+
   const footerMenu = [
     { id: "page_about_us", label: "About Us", url: "/about-us", link: "/about-us", type: "custom", submenu: [] },
     { id: "page_faqs", label: "FAQs", url: "/faqs", link: "/faqs", type: "custom", submenu: [] },
@@ -1225,6 +1232,7 @@ async function seedMenuSettings() {
     {
       $set: {
         browseMenu,
+        footerFirstMenu,
         footerMenu,
         policiesMenu,
         mainNavMenu

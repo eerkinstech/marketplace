@@ -165,6 +165,7 @@ export const getPublicMenuSettings = asyncHandler(async (_req, res) => {
       browseMenu: settings?.browseMenu || [],
       topBarMenu: settings?.topBarMenu || [],
       mainNavMenu: settings?.mainNavMenu || [],
+      footerFirstMenu: settings?.footerFirstMenu || [],
       footerMenu: settings?.footerMenu || [],
       policiesMenu: settings?.policiesMenu || []
     }

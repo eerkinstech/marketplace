@@ -18,6 +18,7 @@ const menuSettingsSchema = new mongoose.Schema(
     browseMenu: { type: [menuItemSchema], default: [] },
     topBarMenu: { type: [menuItemSchema], default: [] },
     mainNavMenu: { type: [menuItemSchema], default: [] },
+    footerFirstMenu: { type: [menuItemSchema], default: [] },
     footerMenu: { type: [menuItemSchema], default: [] },
     policiesMenu: { type: [menuItemSchema], default: [] }
   },

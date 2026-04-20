@@ -12,6 +12,7 @@ const menusCache = {
 const emptyMenus = {
   browseMenu: [],
   mainNavMenu: [],
+  footerFirstMenu: [],
   footerMenu: [],
   policiesMenu: [],
   topBarMenu: []
@@ -21,6 +22,7 @@ function normalizeMenus(payload) {
   return {
     browseMenu: Array.isArray(payload?.browseMenu) ? payload.browseMenu : [],
     mainNavMenu: Array.isArray(payload?.mainNavMenu) ? payload.mainNavMenu : [],
+    footerFirstMenu: Array.isArray(payload?.footerFirstMenu) ? payload.footerFirstMenu : [],
     footerMenu: Array.isArray(payload?.footerMenu) ? payload.footerMenu : [],
     policiesMenu: Array.isArray(payload?.policiesMenu) ? payload.policiesMenu : [],
     topBarMenu: Array.isArray(payload?.topBarMenu) ? payload.topBarMenu : []

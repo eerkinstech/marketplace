@@ -15,6 +15,7 @@ import { ReturnRequest } from "../../models/ReturnRequest.js";
 import { Review } from "../../models/Review.js";
 import { ReviewSettings } from "../../models/ReviewSettings.js";
 import { SeoPage } from "../../models/SeoPage.js";
+import { ShippingArea } from "../../models/ShippingArea.js";
 import { User } from "../../models/User.js";
 import { uploadBufferImage } from "../../services/storage/upload.service.js";
 import { syncMediaLibraryImages } from "../../services/media/syncMediaLibrary.service.js";
@@ -43,6 +44,23 @@ async function resolveCategories(categoryIds = []) {
 
   const categoryMap = new Map(categories.map((category) => [String(category._id), category]));
   return normalizedIds.map((id) => categoryMap.get(id)).filter(Boolean);
+}
+
+async function resolveAdminShippingAreaIds(areaIds = []) {
+  const normalizedIds = [...new Set((areaIds || []).filter(Boolean).map(String))];
+  if (!normalizedIds.length) return [];
+
+  const areas = await ShippingArea.find({
+    _id: { $in: normalizedIds },
+    ownerType: "admin",
+    owner: null
+  }).select("_id").lean();
+
+  if (areas.length !== normalizedIds.length) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "One or more shipping options are invalid");
+  }
+
+  return normalizedIds;
 }
 
 async function uploadProductImages(rawImages = []) {
@@ -358,6 +376,7 @@ export const listProducts = asyncHandler(async (_req, res) => {
 export const createAdminProduct = asyncHandler(async (req, res) => {
   const payload = req.validatedBody;
   const categories = await resolveCategories(getProductCategoryIds(payload));
+  const shippingAreas = await resolveAdminShippingAreaIds(payload.shippingAreaIds || []);
   const primaryCategory = categories[0];
   const images = await uploadProductImages(req.body.images || []);
   const product = await Product.create({
@@ -367,6 +386,7 @@ export const createAdminProduct = asyncHandler(async (req, res) => {
     categories: categories.map((category) => category._id),
     categorySlug: primaryCategory.slug,
     categorySlugs: categories.map((category) => category.slug),
+    shippingAreas,
     images,
     status: "approved"
   });
@@ -388,6 +408,9 @@ export const updateAdminProduct = asyncHandler(async (req, res) => {
   if (!product) throw new ApiError(StatusCodes.NOT_FOUND, "Product not found");
   const payload = req.validatedBody;
   const categories = await resolveCategories(getProductCategoryIds(payload));
+  const shippingAreas = Array.isArray(payload.shippingAreaIds)
+    ? await resolveAdminShippingAreaIds(payload.shippingAreaIds)
+    : null;
   const primaryCategory = categories[0];
 
   Object.assign(product, normalizeProductPayload(payload));
@@ -395,6 +418,9 @@ export const updateAdminProduct = asyncHandler(async (req, res) => {
   product.categories = categories.map((category) => category._id);
   product.categorySlug = primaryCategory.slug;
   product.categorySlugs = categories.map((category) => category.slug);
+  if (shippingAreas) {
+    product.shippingAreas = shippingAreas;
+  }
   product.status = product.vendor.equals(req.user._id) ? "approved" : "pending";
   product.rejectionReason = "";
   if (req.body.images) {
@@ -839,6 +865,7 @@ export const getMenuSettings = asyncHandler(async (_req, res) => {
       browseMenu: settings?.browseMenu || [],
       topBarMenu: settings?.topBarMenu || [],
       mainNavMenu: settings?.mainNavMenu || [],
+      footerFirstMenu: settings?.footerFirstMenu || [],
       footerMenu: settings?.footerMenu || [],
       policiesMenu: settings?.policiesMenu || []
     }
@@ -853,6 +880,7 @@ export const updateMenuSettings = asyncHandler(async (req, res) => {
         browseMenu: req.validatedBody.browseMenu,
         topBarMenu: req.validatedBody.topBarMenu,
         mainNavMenu: req.validatedBody.mainNavMenu,
+        footerFirstMenu: req.validatedBody.footerFirstMenu,
         footerMenu: req.validatedBody.footerMenu,
         policiesMenu: req.validatedBody.policiesMenu
       },
@@ -867,6 +895,7 @@ export const updateMenuSettings = asyncHandler(async (req, res) => {
       browseMenu: settings?.browseMenu || [],
       topBarMenu: settings?.topBarMenu || [],
       mainNavMenu: settings?.mainNavMenu || [],
+      footerFirstMenu: settings?.footerFirstMenu || [],
       footerMenu: settings?.footerMenu || [],
       policiesMenu: settings?.policiesMenu || []
     }

@@ -9,6 +9,7 @@ const TAB_CONFIG = [
   { key: "browse", title: "Shop Category", icon: "fa-sitemap" },
   { key: "topBar", title: "Top Bar", icon: "fa-stream" },
   { key: "mainNav", title: "Main Nav", icon: "fa-bars" },
+  { key: "footerFirst", title: "Footer First Menu", icon: "fa-list" },
   { key: "footer", title: "Footer", icon: "fa-link" },
   { key: "policies", title: "Policies", icon: "fa-file-lines" }
 ];
@@ -17,6 +18,7 @@ const MENU_FIELDS = {
   browse: "browseMenu",
   topBar: "topBarMenu",
   mainNav: "mainNavMenu",
+  footerFirst: "footerFirstMenu",
   footer: "footerMenu",
   policies: "policiesMenu"
 };
@@ -25,6 +27,7 @@ const EMPTY_MENUS = {
   browseMenu: [],
   topBarMenu: [],
   mainNavMenu: [],
+  footerFirstMenu: [],
   footerMenu: [],
   policiesMenu: []
 };
@@ -45,6 +48,7 @@ function normalizeMenus(payload) {
     browseMenu: Array.isArray(payload?.browseMenu) ? payload.browseMenu : [],
     topBarMenu: Array.isArray(payload?.topBarMenu) ? payload.topBarMenu : [],
     mainNavMenu: Array.isArray(payload?.mainNavMenu) ? payload.mainNavMenu : [],
+    footerFirstMenu: Array.isArray(payload?.footerFirstMenu) ? payload.footerFirstMenu : [],
     footerMenu: Array.isArray(payload?.footerMenu) ? payload.footerMenu : [],
     policiesMenu: Array.isArray(payload?.policiesMenu) ? payload.policiesMenu : []
   };
@@ -234,6 +238,7 @@ export default function AdminMenusPage() {
     browse: menus.browseMenu.length,
     topBar: menus.topBarMenu.length,
     mainNav: menus.mainNavMenu.length,
+    footerFirst: menus.footerFirstMenu.length,
     footer: menus.footerMenu.length,
     policies: menus.policiesMenu.length
   }), [menus]);
@@ -371,6 +376,7 @@ export default function AdminMenusPage() {
         browseMenu: serializeItems(menus.browseMenu),
         topBarMenu: serializeItems(menus.topBarMenu),
         mainNavMenu: serializeItems(menus.mainNavMenu),
+        footerFirstMenu: serializeItems(menus.footerFirstMenu),
         footerMenu: serializeItems(menus.footerMenu),
         policiesMenu: serializeItems(menus.policiesMenu)
       });
@@ -545,7 +551,7 @@ export default function AdminMenusPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {TAB_CONFIG.map((tab) => (
           <div key={tab.key} className="stat-chip">
             <div className="mini-label">{tab.title}</div>

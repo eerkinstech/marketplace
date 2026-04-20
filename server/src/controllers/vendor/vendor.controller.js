@@ -7,6 +7,7 @@ import { Order } from "../../models/Order.js";
 import { Product } from "../../models/Product.js";
 import { ReturnRequest } from "../../models/ReturnRequest.js";
 import { Review } from "../../models/Review.js";
+import { ShippingArea } from "../../models/ShippingArea.js";
 import { User } from "../../models/User.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { ApiError } from "../../utils/ApiError.js";
@@ -42,6 +43,23 @@ async function resolveCategories(categoryIds = []) {
 
   const categoryMap = new Map(categories.map((category) => [String(category._id), category]));
   return normalizedIds.map((id) => categoryMap.get(id)).filter(Boolean);
+}
+
+async function resolveVendorShippingAreaIds(areaIds = [], owner) {
+  const normalizedIds = [...new Set((areaIds || []).filter(Boolean).map(String))];
+  if (!normalizedIds.length) return [];
+
+  const areas = await ShippingArea.find({
+    _id: { $in: normalizedIds },
+    ownerType: "vendor",
+    owner
+  }).select("_id").lean();
+
+  if (areas.length !== normalizedIds.length) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "One or more shipping options are invalid");
+  }
+
+  return normalizedIds;
 }
 
 function getProductCategoryIds(payload) {
@@ -229,6 +247,7 @@ export const createProduct = asyncHandler(async (req, res) => {
   if (req.user.status !== "active") throw new ApiError(StatusCodes.FORBIDDEN, "Vendor account is not approved");
   const payload = req.validatedBody;
   const categories = await resolveCategories(getProductCategoryIds(payload));
+  const shippingAreas = await resolveVendorShippingAreaIds(payload.shippingAreaIds || [], req.user._id);
   const primaryCategory = categories[0];
   const images = await uploadProductImages(req.body.images || []);
   const product = await Product.create({
@@ -238,6 +257,7 @@ export const createProduct = asyncHandler(async (req, res) => {
     categories: categories.map((category) => category._id),
     categorySlug: primaryCategory.slug,
     categorySlugs: categories.map((category) => category.slug),
+    shippingAreas,
     images,
     status: "pending"
   });
@@ -258,11 +278,17 @@ export const updateProduct = asyncHandler(async (req, res) => {
   if (!product) throw new ApiError(StatusCodes.NOT_FOUND, "Product not found");
   const payload = req.validatedBody;
   const categories = await resolveCategories(getProductCategoryIds(payload));
+  const shippingAreas = Array.isArray(payload.shippingAreaIds)
+    ? await resolveVendorShippingAreaIds(payload.shippingAreaIds, req.user._id)
+    : null;
   const primaryCategory = categories[0];
   product.category = primaryCategory._id;
   product.categories = categories.map((category) => category._id);
   product.categorySlug = primaryCategory.slug;
   product.categorySlugs = categories.map((category) => category.slug);
+  if (shippingAreas) {
+    product.shippingAreas = shippingAreas;
+  }
   Object.assign(product, {
     ...normalizeProductPayload(payload),
     status: "pending"

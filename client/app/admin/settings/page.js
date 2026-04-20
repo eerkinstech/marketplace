@@ -11,6 +11,7 @@ const EMPTY_MENUS = {
   browseMenu: [],
   topBarMenu: [],
   mainNavMenu: [],
+  footerFirstMenu: [],
   footerMenu: [],
   policiesMenu: []
 };
@@ -47,6 +48,7 @@ function normalizeMenus(payload) {
     browseMenu: Array.isArray(payload?.browseMenu) ? payload.browseMenu : [],
     topBarMenu: Array.isArray(payload?.topBarMenu) ? payload.topBarMenu : [],
     mainNavMenu: Array.isArray(payload?.mainNavMenu) ? payload.mainNavMenu : [],
+    footerFirstMenu: Array.isArray(payload?.footerFirstMenu) ? payload.footerFirstMenu : [],
     footerMenu: Array.isArray(payload?.footerMenu) ? payload.footerMenu : [],
     policiesMenu: Array.isArray(payload?.policiesMenu) ? payload.policiesMenu : []
   };
@@ -115,13 +117,14 @@ export default function AdminSettingsPage() {
     const browseCount = countMenuItems(menus.browseMenu);
     const topBarCount = countMenuItems(menus.topBarMenu);
     const mainNavCount = countMenuItems(menus.mainNavMenu);
+    const footerFirstCount = countMenuItems(menus.footerFirstMenu);
     const footerCount = countMenuItems(menus.footerMenu);
     const policiesCount = countMenuItems(menus.policiesMenu);
 
     return [
       { title: requireReviewApproval ? "Manual" : "Automatic", description: "Review publishing mode" },
       { title: String(browseCount + mainNavCount), description: "Primary navigation links" },
-      { title: String(topBarCount + footerCount + policiesCount), description: "Supportive storefront links" }
+      { title: String(topBarCount + footerFirstCount + footerCount + policiesCount), description: "Supportive storefront links" }
     ];
   }, [menus, requireReviewApproval]);
 
@@ -143,6 +146,12 @@ export default function AdminSettingsPage() {
       title: "Main navigation",
       count: countMenuItems(menus.mainNavMenu),
       labels: flattenMenuLabels(menus.mainNavMenu).slice(0, 5)
+    },
+    {
+      key: "footerfirst",
+      title: "Footer first menu",
+      count: countMenuItems(menus.footerFirstMenu),
+      labels: flattenMenuLabels(menus.footerFirstMenu).slice(0, 5)
     },
     {
       key: "footer",

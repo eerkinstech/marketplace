@@ -7,6 +7,7 @@ import { NewsletterCampaign } from "../../models/NewsletterCampaign.js";
 import { NewsletterSubscriber } from "../../models/NewsletterSubscriber.js";
 import { User } from "../../models/User.js";
 import { sendEmail } from "../../services/notifications/email.service.js";
+import { env } from "../../config/env.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { ApiError } from "../../utils/ApiError.js";
 
@@ -17,6 +18,64 @@ function escapeHtml(value = "") {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+}
+
+function stripHtml(value = "") {
+  return String(value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+const socialLinks = [
+  { label: "Facebook", icon: "f", href: "https://facebook.com" },
+  { label: "Instagram", icon: "ig", href: "https://instagram.com" },
+  { label: "X", icon: "x", href: "https://x.com" },
+  { label: "LinkedIn", icon: "in", href: "https://linkedin.com" }
+];
+
+function wrapEmailTemplate({ subject, messageHtml, previewText = "" }) {
+  const websiteUrl = env.clientUrl || "http://localhost:3000";
+  const escapedWebsiteUrl = escapeHtml(websiteUrl);
+  const styledMessageHtml = messageHtml
+    .replace(/<h1([^>]*)>/gi, '<h1$1 style="margin:0 0 18px;font-size:30px;line-height:1.18;font-weight:800;color:#0f172a;">')
+    .replace(/<h2([^>]*)>/gi, '<h2$1 style="margin:0 0 16px;font-size:25px;line-height:1.22;font-weight:800;color:#0f172a;">')
+    .replace(/<h3([^>]*)>/gi, '<h3$1 style="margin:0 0 14px;font-size:21px;line-height:1.28;font-weight:750;color:#0f172a;">')
+    .replace(/<h4([^>]*)>/gi, '<h4$1 style="margin:0 0 12px;font-size:18px;line-height:1.35;font-weight:750;color:#0f172a;">')
+    .replace(/<h5([^>]*)>/gi, '<h5$1 style="margin:0 0 10px;font-size:15px;line-height:1.4;font-weight:750;color:#0f172a;text-transform:uppercase;letter-spacing:0.08em;">')
+    .replace(/<h6([^>]*)>/gi, '<h6$1 style="margin:0 0 10px;font-size:15px;line-height:1.4;font-weight:750;color:#0f172a;text-transform:uppercase;letter-spacing:0.08em;">')
+    .replace(/<p([^>]*)>/gi, '<p$1 style="margin:0 0 14px;font-size:15px;line-height:1.75;color:#475569;">')
+    .replace(/<ul([^>]*)>/gi, '<ul$1 style="margin:0 0 16px 22px;padding:0;color:#475569;list-style:disc;">')
+    .replace(/<ol([^>]*)>/gi, '<ol$1 style="margin:0 0 16px 22px;padding:0;color:#475569;list-style:decimal;">')
+    .replace(/<li([^>]*)>/gi, '<li$1 style="margin:0 0 8px;padding-left:4px;font-size:15px;line-height:1.65;">')
+    .replace(/<blockquote([^>]*)>/gi, '<blockquote$1 style="margin:0 0 16px;border-left:4px solid #cbd5e1;padding-left:14px;color:#64748b;font-style:italic;">')
+    .replace(/<a /gi, '<a style="color:#1d5c54;font-weight:700;text-decoration:underline;" ');
+
+  return `
+    <div style="margin:0;background:#f8fafc;padding:28px 16px;font-family:Arial,sans-serif;color:#0f172a;">
+      <div style="max-width:680px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:18px;overflow:hidden;">
+        <div style="padding:24px 28px;border-bottom:1px solid #e2e8f0;background:#0f172a;color:#ffffff;">
+          <div style="font-size:12px;letter-spacing:0.18em;text-transform:uppercase;color:#cbd5e1;">MarketSphere</div>
+          <h1 style="margin:10px 0 0;font-size:26px;line-height:1.25;">${escapeHtml(subject)}</h1>
+        </div>
+        <div style="padding:28px;font-size:16px;line-height:1.7;color:#334155;">
+          ${styledMessageHtml}
+       
+        </div>
+        <div style="padding:22px 28px;border-top:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-size:12px;line-height:1.6;text-align:center;">
+          <div style="margin-bottom:14px;">
+             <div style="margin-bottom:28px; text-align:center;">
+            <a href="${escapedWebsiteUrl}" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;border-radius:12px;padding:13px 18px;font-size:14px;font-weight:700;">Visit website</a>
+          </div>
+            ${socialLinks.map((link) => `
+              <a href="${escapeHtml(link.href)}" aria-label="${escapeHtml(link.label)}" style="display:inline-block;width:34px;height:34px;line-height:34px;margin-right:8px;border-radius:999px;background:#0f172a;color:#ffffff;text-align:center;text-decoration:none;font-size:11px;font-weight:700;text-transform:uppercase;">${escapeHtml(link.icon)}</a>
+            `).join("")}
+          </div>
+          <div>
+            <a href="${escapedWebsiteUrl}" style="color:#0f172a;font-weight:700;text-decoration:none; display:block; text-align:center;">${escapedWebsiteUrl}</a>
+          </div>
+          <div style="margin-top:8px; text-align:center; line-height:1.6;">You are receiving this message because you have a customer account with MarketSphere.</div>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 export const subscribeNewsletter = asyncHandler(async (req, res) => {
@@ -142,6 +201,8 @@ export const sendLatestCategoriesNewsletter = asyncHandler(async (req, res) => {
 
   const campaign = await NewsletterCampaign.create({
     subject,
+    campaignType: "latest_categories",
+    audience: "subscribers",
     previewText,
     html,
     categoryIds: categories.map((category) => category._id),
@@ -160,6 +221,54 @@ export const sendLatestCategoriesNewsletter = asyncHandler(async (req, res) => {
     data: campaign,
     message: delivery.delivered
       ? `Newsletter sent to ${subscribers.length} subscribers`
-      : `Newsletter recorded for ${subscribers.length} subscribers. Configure Resend env vars to deliver real email.`
+      : `Newsletter recorded for ${subscribers.length} subscribers. Configure SMTP env vars to deliver real email.`
+  });
+});
+
+export const sendCustomCustomerEmail = asyncHandler(async (req, res) => {
+  const subject = String(req.body.subject || "").trim();
+  const messageHtml = String(req.body.messageHtml || "").trim();
+  const customerIds = Array.isArray(req.body.customerIds)
+    ? [...new Set(req.body.customerIds.map((id) => String(id || "").trim()).filter(Boolean))]
+    : [];
+  const previewText = stripHtml(messageHtml).slice(0, 160);
+
+  if (!subject) throw new ApiError(StatusCodes.BAD_REQUEST, "Subject is required");
+  if (!stripHtml(messageHtml)) throw new ApiError(StatusCodes.BAD_REQUEST, "Message is required");
+  if (!customerIds.length) throw new ApiError(StatusCodes.BAD_REQUEST, "Select at least one customer");
+
+  const customers = await User.find({ _id: { $in: customerIds }, role: "customer", status: "active" }).select("email").lean();
+  if (customers.length !== customerIds.length) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "One or more selected customers are invalid");
+  }
+
+  const recipients = [...new Set(customers.map((customer) => customer.email).filter(Boolean))];
+
+  if (!recipients.length) throw new ApiError(StatusCodes.BAD_REQUEST, "Selected customers do not have email addresses");
+
+  const html = wrapEmailTemplate({ subject, messageHtml, previewText });
+  const delivery = await sendEmail({
+    to: recipients,
+    subject,
+    html
+  });
+
+  const campaign = await NewsletterCampaign.create({
+    subject,
+    campaignType: "custom_customer",
+    audience: "customers",
+    previewText,
+    html,
+    sentCount: recipients.length,
+    deliveryMode: delivery.mode,
+    createdBy: req.user._id
+  });
+
+  res.status(StatusCodes.CREATED).json({
+    success: true,
+    data: campaign,
+    message: delivery.delivered
+      ? `Email sent to ${recipients.length} customers`
+      : `Email recorded for ${recipients.length} customers. Configure SMTP env vars to deliver real email.`
   });
 });

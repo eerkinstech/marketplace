@@ -8,6 +8,7 @@ import ProductOptions from "./ProductForm/Options";
 import ProductCategories from "./ProductForm/Categories";
 import ProductBenefits from "./ProductForm/Benefits";
 import ProductSEO from "./ProductForm/SEO";
+import ProductShipping from "./ProductForm/Shipping";
 import { marketplaceApi } from "@/lib/api/marketplace";
 
 export default function ProductForm({
@@ -19,10 +20,14 @@ export default function ProductForm({
   isEditing,
   token,
   mediaScope = "vendor",
+  shippingScope = "vendor",
 }) {
   const [activeTab, setActiveTab] = useState("basic");
   const [mediaItems, setMediaItems] = useState([]);
   const [mediaError, setMediaError] = useState("");
+  const [shippingAreas, setShippingAreas] = useState([]);
+  const [shippingLoading, setShippingLoading] = useState(false);
+  const [shippingError, setShippingError] = useState("");
   const formRef = useRef(null);
 
   const tabs = [
@@ -31,6 +36,7 @@ export default function ProductForm({
     { id: "images", label: "Images", icon: "fa-images" },
     { id: "options", label: "Variants & Options", icon: "fa-shapes" },
     { id: "categories", label: "Categories", icon: "fa-folder" },
+    { id: "shipping", label: "Shipping", icon: "fa-truck-fast" },
     { id: "benefits", label: "Benefits", icon: "fa-star" },
     { id: "seo", label: "SEO", icon: "fa-search" },
   ];
@@ -89,9 +95,33 @@ export default function ProductForm({
     }
   };
 
+  const loadShippingAreas = async () => {
+    if (!token) return [];
+
+    try {
+      setShippingLoading(true);
+      setShippingError("");
+      const response = shippingScope === "admin"
+        ? await marketplaceApi.getAdminShipping(token)
+        : await marketplaceApi.getVendorShippingManagement(token);
+      const areas = response?.data?.areas || [];
+      setShippingAreas(areas);
+      return areas;
+    } catch (error) {
+      setShippingError(error.message || "Failed to load shipping options.");
+      return [];
+    } finally {
+      setShippingLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadMediaLibrary();
   }, [token, mediaScope]);
+
+  useEffect(() => {
+    loadShippingAreas();
+  }, [token, shippingScope]);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -156,6 +186,18 @@ export default function ProductForm({
               formData={formData}
               setFormData={setFormData}
               categories={categories}
+            />
+          )}
+
+          {/* Shipping */}
+          {activeTab === "shipping" && (
+            <ProductShipping
+              formData={formData}
+              setFormData={setFormData}
+              shippingAreas={shippingAreas}
+              loading={shippingLoading}
+              error={shippingError}
+              scopeLabel={shippingScope === "admin" ? "the admin" : "your vendor"}
             />
           )}
 

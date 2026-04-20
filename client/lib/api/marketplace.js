@@ -210,6 +210,7 @@ export const marketplaceApi = {
   getAdminContactSubmissions: (token) => fetchJson("/admin/contact-submissions", withAuth(token)),
   getAdminNewsletterSubscribers: (token) => fetchJson("/admin/newsletter/subscribers", withAuth(token)),
   getAdminNewsletterCampaigns: (token) => fetchJson("/admin/newsletter/campaigns", withAuth(token)),
+  sendCustomCustomerEmail: (token, body) => fetchJson("/admin/newsletter/send-custom-customer-email", { method: "POST", body: JSON.stringify(body), ...withAuth(token) }),
   sendLatestCategoriesNewsletter: (token, body) => fetchJson("/admin/newsletter/send-latest-categories", { method: "POST", body: JSON.stringify(body), ...withAuth(token) }),
   getAdminShipping: (token) => fetchJson("/admin/shipping", withAuth(token)),
   createAdminShippingArea: (token, body) => fetchJson("/admin/shipping/areas", { method: "POST", body: JSON.stringify(body), ...withAuth(token) }),

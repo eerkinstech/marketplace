@@ -20,6 +20,7 @@ const initialFormData = {
   options: [],
   variants: [],
   categories: [],
+  shippingAreaIds: [],
   benefitsText: "",
   benefitsHeading: "",
   benefitFields: [],
@@ -99,6 +100,7 @@ function buildFormData(product) {
       image: variant.image || ""
     })),
     categories: categoryIds,
+    shippingAreaIds: (product.shippingAreas || []).map((area) => String(area?._id || area)).filter(Boolean),
     benefitsText: product.benefitsText || "",
     benefitsHeading: product.benefitsHeading || "",
     benefitFields: parseBenefitFields(product.benefitsText || ""),
@@ -189,6 +191,7 @@ function VendorProductPageContent() {
         compareAtPrice: Number(formData.comparePrice) || 0,
         categoryId: formData.categories[0],
         categoryIds: formData.categories,
+        shippingAreaIds: formData.shippingAreaIds || [],
         stock: Number(formData.stock) || 0,
         weight: Number(formData.weight) || 0,
         sku: formData.sku.trim(),

@@ -22,7 +22,7 @@ export function ProductCard({ product }) {
         </div>
       </Link>
       <div className="mt-4 flex flex-1 flex-col px-3 pb-1">
-        <Link href={`/product/${product.slug}`} className="line-clamp-2 text-[18px] font-semibold leading-[1.15] tracking-[-0.03em]" style={{ color: "var(--black)" }}>
+        <Link href={`/product/${product.slug}`} className="line-clamp-3 text-[18px] font-semibold leading-[1.15] tracking-[-0.03em]" style={{ color: "var(--black)" }}>
           {product.name}
         </Link>
         <div className="mt-3 text-[13px] font-medium" style={{ color: "color-mix(in srgb, var(--text) 68%, transparent)" }}>Lowest Ask</div>

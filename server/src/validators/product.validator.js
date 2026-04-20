@@ -31,6 +31,7 @@ export const productSchema = z.object({
   benefitsHeading: z.string().optional(),
   benefitsText: z.string().optional(),
   tags: z.array(z.string()).optional(),
+  shippingAreaIds: z.array(z.string().min(1)).optional(),
   seo: z
     .object({
       metaTitle: z.string().optional(),

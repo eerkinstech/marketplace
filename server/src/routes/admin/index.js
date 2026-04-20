@@ -66,6 +66,7 @@ import {
   listContactSubmissions,
   listNewsletterCampaigns,
   listNewsletterSubscribers,
+  sendCustomCustomerEmail,
   sendLatestCategoriesNewsletter
 } from "../../controllers/catalog/engagement.controller.js";
 import {
@@ -166,6 +167,7 @@ router.post("/conversations/:id/messages", createMessage);
 router.get("/contact-submissions", listContactSubmissions);
 router.get("/newsletter/subscribers", listNewsletterSubscribers);
 router.get("/newsletter/campaigns", listNewsletterCampaigns);
+router.post("/newsletter/send-custom-customer-email", sendCustomCustomerEmail);
 router.post("/newsletter/send-latest-categories", sendLatestCategoriesNewsletter);
 router.get("/shipping", getAdminShipping);
 router.post("/shipping/areas", createAdminShippingArea);

@@ -73,12 +73,15 @@ function flattenMenu(items) {
 export function Footer() {
   const [email, setEmail] = useState("");
   const [notice, setNotice] = useState("");
-  const { browseMenu, footerMenu, policiesMenu } = useMenus();
+  const { browseMenu, footerFirstMenu, footerMenu, policiesMenu } = useMenus();
 
-  const browseMenuLinks = useMemo(() => {
-    const nextLinks = flattenMenu(browseMenu);
-    return nextLinks.length ? nextLinks.slice(0, 6) : browseLinks;
-  }, [browseMenu]);
+  const footerFirstMenuLinks = useMemo(() => {
+    const nextLinks = flattenMenu(footerFirstMenu);
+    if (nextLinks.length) return nextLinks.slice(0, 6);
+
+    const browseLinksFallback = flattenMenu(browseMenu);
+    return browseLinksFallback.length ? browseLinksFallback.slice(0, 6) : browseLinks;
+  }, [browseMenu, footerFirstMenu]);
 
   const footerMenuLinks = useMemo(() => {
     const nextLinks = flattenMenu(footerMenu);
@@ -89,6 +92,11 @@ export function Footer() {
     const nextLinks = flattenMenu(policiesMenu);
     return nextLinks.length ? nextLinks.slice(0, 6) : businessLinks;
   }, [policiesMenu]);
+
+  const footerMenuColumns = useMemo(() => ([
+    { title: "Browse", links: footerFirstMenuLinks },
+    { title: "Support", links: footerMenuLinks }
+  ]), [footerFirstMenuLinks, footerMenuLinks]);
 
   const serviceCards = [
     {
@@ -207,27 +215,18 @@ export function Footer() {
             </div>
           </div>
 
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Browse</div>
-            <div className="mt-4 grid gap-3 text-sm text-slate-600">
-              {browseMenuLinks.map((link) => (
-                <Link key={`${link.href}-${link.label}`} href={link.href} className="hover:text-ink hover:underline">
-                  {link.label}
-                </Link>
-              ))}
+          {footerMenuColumns.map((column) => (
+            <div key={column.title}>
+              <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">{column.title}</div>
+              <div className="mt-4 grid gap-3 text-sm text-slate-600">
+                {column.links.map((link) => (
+                  <Link key={`${link.href}-${link.label}`} href={link.href} className="hover:text-ink hover:underline">
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
-
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Support</div>
-            <div className="mt-4 grid gap-3 text-sm text-slate-600">
-              {footerMenuLinks.map((link) => (
-                <Link key={`${link.href}-${link.label}`} href={link.href} className="hover:text-ink hover:underline">
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </div>
+          ))}
 
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">Newsletter</div>

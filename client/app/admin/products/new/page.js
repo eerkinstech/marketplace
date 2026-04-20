@@ -20,6 +20,7 @@ const initialFormData = {
   options: [],
   variants: [],
   categories: [],
+  shippingAreaIds: [],
   benefitsText: "",
   benefitsHeading: "",
   benefitFields: [],
@@ -99,6 +100,7 @@ function buildFormData(product) {
       image: variant.image || ""
     })),
     categories: categoryIds,
+    shippingAreaIds: (product.shippingAreas || []).map((area) => String(area?._id || area)).filter(Boolean),
     benefitsText: product.benefitsText || "",
     benefitsHeading: product.benefitsHeading || "",
     benefitFields: parseBenefitFields(product.benefitsText || ""),
@@ -118,6 +120,7 @@ function AdminProductPageContent() {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState(initialFormData);
   const [statusNote, setStatusNote] = useState("");
+  const [productOwnerRole, setProductOwnerRole] = useState("admin");
 
   useEffect(() => {
     async function loadCategories() {
@@ -140,8 +143,10 @@ function AdminProductPageContent() {
         const response = await marketplaceApi.getAdminProduct(token, productId);
         setFormData(buildFormData(response.data));
         if (response.data.vendor?.role === "vendor") {
+          setProductOwnerRole("vendor");
           setStatusNote("Editing a vendor product will send it back to pending approval until an admin re-approves it.");
         } else {
+          setProductOwnerRole("admin");
           setStatusNote("Admin-owned products remain approved after save.");
         }
       } catch (err) {
@@ -191,6 +196,7 @@ function AdminProductPageContent() {
         compareAtPrice: Number(formData.comparePrice) || 0,
         categoryId: formData.categories[0],
         categoryIds: formData.categories,
+        shippingAreaIds: formData.shippingAreaIds || [],
         stock: Number(formData.stock) || 0,
         weight: Number(formData.weight) || 0,
         sku: formData.sku.trim(),
@@ -213,6 +219,10 @@ function AdminProductPageContent() {
         },
         images: formData.images
       };
+
+      if (isEditing && productOwnerRole === "vendor") {
+        delete payload.shippingAreaIds;
+      }
 
       if (isEditing) {
         await marketplaceApi.updateAdminProduct(token, productId, payload);
@@ -247,6 +257,7 @@ function AdminProductPageContent() {
         isEditing={isEditing}
         token={token}
         mediaScope="admin"
+        shippingScope="admin"
       />
     </section>
   );

@@ -15,6 +15,7 @@ export const updateMenuSettingsSchema = z.object({
   browseMenu: z.array(menuItemSchema).default([]),
   topBarMenu: z.array(menuItemSchema).default([]),
   mainNavMenu: z.array(menuItemSchema).default([]),
+  footerFirstMenu: z.array(menuItemSchema).default([]),
   footerMenu: z.array(menuItemSchema).default([]),
   policiesMenu: z.array(menuItemSchema).default([])
 });
