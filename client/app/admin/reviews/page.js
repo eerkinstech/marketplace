@@ -9,6 +9,7 @@ import { API_URL } from "@/lib/constants/site";
 const TAB_ALL = "all";
 const TAB_BY_PRODUCT = "by-product";
 const FILTERS = ["all", "approved", "pending", "rejected"];
+const REVIEW_STATUSES = ["approved", "pending", "rejected"];
 
 function formatDate(value) {
   if (!value) return "N/A";
@@ -66,6 +67,25 @@ function normalizeHeader(value) {
 function getFieldValue(record, key) {
   const normalizedKey = normalizeHeader(key);
   return Object.entries(record).find(([field]) => normalizeHeader(field) === normalizedKey)?.[1] || "";
+}
+
+function toCsvValue(value) {
+  const text = String(value ?? "");
+  if (text.includes(",") || text.includes("\"") || text.includes("\n")) {
+    return `"${text.replace(/"/g, "\"\"")}"`;
+  }
+  return text;
+}
+
+function resolveProductId(value, products) {
+  const key = String(value || "").trim().toLowerCase();
+  if (!key) return "";
+  const product = products.find((entry) =>
+    [entry._id, entry.slug, entry.name]
+      .filter(Boolean)
+      .some((candidate) => String(candidate).trim().toLowerCase() === key)
+  );
+  return product?._id || value;
 }
 
 function ReviewStars({ rating = 0 }) {
@@ -243,27 +263,45 @@ export default function AdminReviewsPage() {
     try {
       const headers = [
         "Review ID",
+        "Order ID",
         "Product Name",
         "Product ID",
+        "Product Slug",
+        "Vendor",
         "User Name",
         "User Email",
+        "Guest Name",
+        "Guest Email",
         "Rating",
         "Comment",
         "Status",
-        "Created At"
+        "Moderation Note",
+        "Reviewed By",
+        "Reviewed At",
+        "Created At",
+        "Updated At"
       ];
 
       const rowsToExport = visibleRows.map((row) => [
         row._id || "",
-        `"${String(row.productName || "").replace(/"/g, "\"\"")}"`,
+        row.order?._id || row.order || "",
+        row.productName || "",
         row.productId || "",
-        `"${String(row.userName || "").replace(/"/g, "\"\"")}"`,
+        row.product?.slug || "",
+        row.product?.vendor?.storeName || row.product?.vendor?.name || "",
+        row.userName || "",
         row.userEmail || "",
+        row.guestName || "",
+        row.guestEmail || "",
         row.rating || "0",
-        `"${String(row.comment || "").replace(/"/g, "\"\"").replace(/\n/g, " ")}"`,
+        String(row.comment || "").replace(/\n/g, " "),
         row.status || "pending",
-        row.createdAt ? new Date(row.createdAt).toLocaleString() : ""
-      ]);
+        row.moderationNote || "",
+        row.reviewedBy?.name || row.reviewedBy?.email || "",
+        row.reviewedAt || "",
+        row.createdAt || "",
+        row.updatedAt || ""
+      ].map(toCsvValue));
 
       const csvContent = [headers.join(","), ...rowsToExport.map((row) => row.join(","))].join("\n");
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -316,12 +354,18 @@ export default function AdminReviewsPage() {
           reviewData[header] = values[headerIndex] || "";
         });
 
-        const productId = getFieldValue(reviewData, "product id");
+        const productId = resolveProductId(
+          getFieldValue(reviewData, "product id") ||
+          getFieldValue(reviewData, "product slug") ||
+          getFieldValue(reviewData, "product name"),
+          products
+        );
         const comment = getFieldValue(reviewData, "comment");
         const rating = Number.parseInt(getFieldValue(reviewData, "rating"), 10) || 0;
         const status = String(getFieldValue(reviewData, "status") || "pending").toLowerCase();
-        const userName = getFieldValue(reviewData, "user name") || "Imported Review";
-        const userEmail = String(getFieldValue(reviewData, "user email") || "").toLowerCase().trim();
+        const moderationNote = getFieldValue(reviewData, "moderation note") || "Imported from CSV";
+        const userName = getFieldValue(reviewData, "user name") || getFieldValue(reviewData, "guest name") || "Imported Review";
+        const userEmail = String(getFieldValue(reviewData, "user email") || getFieldValue(reviewData, "guest email") || "").toLowerCase().trim();
 
         if (!productId || !comment || !rating || !userEmail) {
           failedCount += 1;
@@ -359,11 +403,11 @@ export default function AdminReviewsPage() {
           }
 
           const createdReview = createData?.data || {};
-          const desiredStatus = FILTERS.includes(status) ? status : "pending";
+          const desiredStatus = REVIEW_STATUSES.includes(status) ? status : "pending";
           if (createdReview?._id && desiredStatus !== (createdReview.status || "pending")) {
             await marketplaceApi.updateAdminReviewStatus(token, createdReview._id, {
               status: desiredStatus,
-              moderationNote: "Imported from CSV"
+              moderationNote
             });
           }
 

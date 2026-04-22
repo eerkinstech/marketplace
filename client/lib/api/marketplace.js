@@ -10,6 +10,17 @@ class ApiRequestError extends Error {
   }
 }
 
+function isLocalApiBuildFetch() {
+  if (typeof window !== "undefined" || process.env.npm_lifecycle_event !== "build") return false;
+
+  try {
+    const url = new URL(API_URL);
+    return ["localhost", "127.0.0.1", "::1"].includes(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
 async function fetchJson(path, options = {}) {
   let response;
   const requestOptions = {
@@ -23,6 +34,10 @@ async function fetchJson(path, options = {}) {
     requestOptions.cache = options.cache;
   } else {
     requestOptions.cache = "no-store";
+  }
+
+  if (isLocalApiBuildFetch()) {
+    throw new ApiRequestError(`API unavailable for ${path}`, 503);
   }
 
   try {
@@ -61,6 +76,7 @@ export const marketplaceApi = {
   getPageBySlug: (slug) => fetchJson(`/catalog/pages/${slug}`, { next: { revalidate: 300 } }),
   getPolicyBySlug: (slug) => fetchJson(`/catalog/policies/${slug}`, { next: { revalidate: 300 } }),
   getSeoPage: (key) => fetchJson(`/catalog/seo-pages/${key}`, { next: { revalidate: 300 } }),
+  getSitemapData: () => fetchJson("/catalog/sitemap", { next: { revalidate: 300 } }),
   resolveRedirect: (path) => fetchJson(`/catalog/redirects/resolve?path=${encodeURIComponent(path)}`),
   getPublicMenuSettings: () => fetchJson("/catalog/menus", { next: { revalidate: 300 } }),
   login: (body) => fetchJson("/auth/login", { method: "POST", body: JSON.stringify(body) }),

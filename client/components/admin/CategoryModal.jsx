@@ -123,6 +123,17 @@ export default function CategoryModal({
             </select>
           </div>
 
+          <label className="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+            <input
+              type="checkbox"
+              checked={formData.isActive !== false}
+              onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+              disabled={isLoading}
+              className="h-4 w-4 rounded"
+            />
+            <span className="text-sm font-semibold text-gray-900">Active category</span>
+          </label>
+
           {/* Slug */}
           <div>
             <label className="block text-sm font-semibold text-gray-900 mb-2">

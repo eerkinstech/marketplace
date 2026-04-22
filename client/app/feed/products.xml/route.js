@@ -1,4 +1,4 @@
-import { API_URL } from "@/lib/constants/site";
+import { API_URL, SITE_URL } from "@/lib/constants/site";
 
 export async function GET() {
   try {
@@ -17,7 +17,7 @@ export async function GET() {
     });
   } catch {
     return new Response(
-      `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Marketplace Product Feed</title><description>Backend API unavailable</description><link>http://localhost:3000</link></channel></rss>`,
+      `<?xml version="1.0" encoding="UTF-8"?><rss version="2.0"><channel><title>Marketplace Product Feed</title><description>Backend API unavailable</description><link>${SITE_URL}</link></channel></rss>`,
       {
         status: 503,
         headers: {

@@ -161,7 +161,7 @@ export function FaqsClient() {
       </div>
 
       <div className="">
-       
+
 
         <div className="grid gap-6">
           {faqGroups.map((group) => (

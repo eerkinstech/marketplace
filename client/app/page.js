@@ -2,7 +2,29 @@ import Link from "next/link";
 import { HomeHeroSlider } from "@/components/home/HomeHeroSlider";
 import { HomeHorizontalCarousel } from "@/components/home/HomeHorizontalCarousel";
 import { marketplaceApi } from "@/lib/api/marketplace";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/constants/site";
 import { formatCurrency, getProductImage } from "@/lib/utils/storefront";
+
+export const metadata = {
+  title: {
+    absolute: `${SITE_NAME} | Multi-Vendor Marketplace`
+  },
+  description: SITE_DESCRIPTION,
+  alternates: {
+    canonical: "/"
+  },
+  openGraph: {
+    type: "website",
+    title: `${SITE_NAME} | Multi-Vendor Marketplace`,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} | Multi-Vendor Marketplace`,
+    description: SITE_DESCRIPTION
+  }
+};
 
 function getInitials(value = "") {
   return value

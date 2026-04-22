@@ -179,16 +179,16 @@ export const sendLatestCategoriesNewsletter = asyncHandler(async (req, res) => {
       <p style="font-size:16px;line-height:1.6;color:#475569;">${escapeHtml(previewText)}</p>
       <div style="margin-top:24px;">
         ${categories
-          .map(
-            (category) => `
+      .map(
+        (category) => `
               <div style="padding:16px;border:1px solid #e2e8f0;border-radius:12px;margin-bottom:12px;">
                 <h2 style="font-size:20px;margin:0 0 8px;">${escapeHtml(category.name)}</h2>
                 <p style="font-size:14px;line-height:1.6;color:#475569;margin:0 0 8px;">${escapeHtml(category.description || "Browse this latest category on the marketplace.")}</p>
                 <a href="${req.protocol}://${req.get("host").replace(/:5000$/, ":3000")}/category/${category.slug}" style="color:#0f172a;font-weight:600;">View category</a>
               </div>
             `
-          )
-          .join("")}
+      )
+      .join("")}
       </div>
     </div>
   `;

@@ -1,6 +1,13 @@
 import { AuthForm } from "@/components/forms/AuthForm";
 
-export const metadata = { title: "Login" };
+export const metadata = {
+  title: "Login",
+  description: "Sign in to your marketplace account.",
+  robots: {
+    index: false,
+    follow: false
+  }
+};
 
 export default function LoginPage() {
   return (

@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { marketplaceApi } from "@/lib/api/marketplace";
+import { cleanMetaDescription, cleanPageTitle } from "@/lib/utils/metadata";
 
 // Reserved slugs that should not be handled by this dynamic route
 const reservedSlugs = ["about-us", "faqs", "contact-us"];
@@ -24,9 +25,21 @@ export async function generateMetadata({ params }) {
     };
   }
 
+  const title = cleanPageTitle(page?.seo?.metaTitle, page.title);
+  const description = cleanMetaDescription(page?.seo?.metaDescription);
+
   return {
-    title: page?.seo?.metaTitle || page.title,
-    description: page?.seo?.metaDescription || undefined
+    title,
+    description,
+    alternates: {
+      canonical: `/pages/${page.slug}`
+    },
+    openGraph: {
+      type: "article",
+      title,
+      description,
+      url: `/pages/${page.slug}`
+    }
   };
 }
 

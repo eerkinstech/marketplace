@@ -1,13 +1,30 @@
 import "../styles/globals.css";
 import { AppChrome } from "@/components/layout/AppChrome";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/constants/site";
 
 export const metadata = {
   title: {
-    default: "MarketSphere | Multi-Vendor Marketplace",
-    template: "%s | MarketSphere"
+    default: `${SITE_NAME} | Multi-Vendor Marketplace`,
+    template: `%s | ${SITE_NAME}`
   },
-  description: "Production-ready multi-vendor marketplace built with Next.js and Express.",
-  metadataBase: new URL("http://localhost:3000")
+  description: SITE_DESCRIPTION,
+  metadataBase: new URL(SITE_URL),
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} | Multi-Vendor Marketplace`,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} | Multi-Vendor Marketplace`,
+    description: SITE_DESCRIPTION
+  },
+  robots: {
+    index: true,
+    follow: true
+  }
 };
 
 export default function RootLayout({ children }) {

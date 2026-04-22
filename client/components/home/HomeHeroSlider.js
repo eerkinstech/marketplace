@@ -90,7 +90,7 @@ export function HomeHeroSlider({ slides = [] }) {
             </div>
           ) : null}
 
-          <h1 className="mt-3 text-[30px] font-black leading-[1.02] tracking-[-0.045em] md:text-[38px] lg:text-[46px]">
+          <h1 className="mt-3 text-[30px] font-medium leading-[1.02] tracking-[-0.045em] md:text-[38px] lg:text-[46px]">
             {active.title}
           </h1>
 

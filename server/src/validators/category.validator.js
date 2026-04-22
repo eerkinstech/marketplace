@@ -6,6 +6,7 @@ export const categorySchema = z.object({
   parentId: z.string().optional(),
   description: z.string().optional(),
   image: z.string().optional(),
+  isActive: z.boolean().optional(),
   metaTitle: z.string().optional(),
   metaDescription: z.string().optional(),
   metaKeywords: z.string().optional()

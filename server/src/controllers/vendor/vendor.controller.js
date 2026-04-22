@@ -69,6 +69,8 @@ function getProductCategoryIds(payload) {
 }
 
 function normalizeProductPayload(payload) {
+  const merchant = payload.merchant || {};
+
   return {
     name: payload.name,
     slug: slugify(payload.slug || payload.name),
@@ -84,7 +86,21 @@ function normalizeProductPayload(payload) {
     benefitsHeading: payload.benefitsHeading || "",
     benefitsText: payload.benefitsText || "",
     tags: payload.tags || [],
-    seo: payload.seo
+    merchant: {
+      brand: String(merchant.brand || "").trim(),
+      gtin: String(merchant.gtin || "").trim(),
+      mpn: String(merchant.mpn || "").trim(),
+      googleProductCategory: String(merchant.googleProductCategory || "").trim(),
+      condition: merchant.condition || "new",
+      ageGroup: String(merchant.ageGroup || "").trim(),
+      gender: String(merchant.gender || "").trim(),
+      color: String(merchant.color || "").trim(),
+      size: String(merchant.size || "").trim(),
+      material: String(merchant.material || "").trim(),
+      pattern: String(merchant.pattern || "").trim()
+    },
+    seo: payload.seo,
+    ...(payload.isFeatured === undefined ? {} : { isFeatured: payload.isFeatured === true })
   };
 }
 
@@ -311,6 +327,8 @@ export const deleteProduct = asyncHandler(async (req, res) => {
 export const listVendorProducts = asyncHandler(async (req, res) => {
   const products = await Product.find({ vendor: req.user._id })
     .populate("category", "name slug")
+    .populate("categories", "name slug")
+    .populate("shippingAreas", "name areaName label")
     .sort("-createdAt")
     .lean();
   res.json({ success: true, data: products });
@@ -352,7 +370,7 @@ export const updateVendorOrderItemStatus = asyncHandler(async (req, res) => {
 
 export const listVendorInventory = asyncHandler(async (req, res) => {
   const inventory = await Product.find({ vendor: req.user._id })
-    .select("name slug sku stock status price soldCount updatedAt description shortDescription compareAtPrice tags category images variants variantCombinations benefitsHeading benefitsText seo rejectionReason")
+    .select("name slug sku stock status price soldCount updatedAt description shortDescription compareAtPrice tags category images variants variantCombinations benefitsHeading benefitsText seo merchant rejectionReason")
     .populate("category", "name slug")
     .sort("name")
     .lean();

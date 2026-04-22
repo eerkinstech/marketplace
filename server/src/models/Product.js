@@ -18,6 +18,27 @@ const seoSchema = new mongoose.Schema(
   { _id: false }
 );
 
+const merchantSchema = new mongoose.Schema(
+  {
+    brand: { type: String, trim: true, default: "" },
+    gtin: { type: String, trim: true, default: "" },
+    mpn: { type: String, trim: true, default: "" },
+    googleProductCategory: { type: String, trim: true, default: "" },
+    condition: {
+      type: String,
+      enum: ["new", "refurbished", "used"],
+      default: "new"
+    },
+    ageGroup: { type: String, trim: true, default: "" },
+    gender: { type: String, trim: true, default: "" },
+    color: { type: String, trim: true, default: "" },
+    size: { type: String, trim: true, default: "" },
+    material: { type: String, trim: true, default: "" },
+    pattern: { type: String, trim: true, default: "" }
+  },
+  { _id: false }
+);
+
 const productOptionSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
@@ -64,6 +85,7 @@ const productSchema = new mongoose.Schema(
     benefitsHeading: String,
     benefitsText: String,
     tags: [String],
+    merchant: merchantSchema,
     shippingAreas: [{ type: mongoose.Schema.Types.ObjectId, ref: "ShippingArea" }],
     status: {
       type: String,

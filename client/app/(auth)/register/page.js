@@ -1,6 +1,13 @@
 import { AuthForm } from "@/components/forms/AuthForm";
 
-export const metadata = { title: "Register" };
+export const metadata = {
+  title: "Register",
+  description: "Create a customer or vendor marketplace account.",
+  robots: {
+    index: false,
+    follow: false
+  }
+};
 
 export default function RegisterPage() {
   return (

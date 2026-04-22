@@ -3,7 +3,7 @@ import { buildDesignedPageMetadata, loadDesignedPageSeo } from "@/lib/utils/desi
 
 export async function generateMetadata() {
   const seoPage = await loadDesignedPageSeo("faqs");
-  return buildDesignedPageMetadata("FAQs", seoPage);
+  return buildDesignedPageMetadata("FAQs", seoPage, "/faqs");
 }
 
 export default function FaqsPage() {

@@ -108,10 +108,61 @@ function toCsvValue(value) {
 }
 
 function parseList(value) {
+  if (Array.isArray(value)) return value.map((entry) => String(entry).trim()).filter(Boolean);
   return String(value || "")
     .split("|")
     .map((entry) => entry.trim())
     .filter(Boolean);
+}
+
+function parseJsonField(value, fallback) {
+  if (Array.isArray(value) || (value && typeof value === "object")) return value;
+  const text = String(value || "").trim();
+  if (!text) return fallback;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return fallback;
+  }
+}
+
+function stringifyJsonField(value) {
+  if (!value || (Array.isArray(value) && !value.length)) return "";
+  return JSON.stringify(value);
+}
+
+function parseBoolean(value) {
+  if (typeof value === "boolean") return value;
+  const text = String(value || "").trim().toLowerCase();
+  if (!text) return undefined;
+  return ["1", "true", "yes", "active", "approved"].includes(text);
+}
+
+function normalizeHeader(value) {
+  return String(value || "").trim();
+}
+
+function getRowValue(row, keys) {
+  const wanted = keys.map((key) => String(key).toLowerCase());
+  const match = Object.entries(row).find(([key]) => wanted.includes(String(key).toLowerCase()));
+  return match?.[1] ?? "";
+}
+
+function getCategoryIdsFromRow(row, categories) {
+  const rawValues = [
+    getRowValue(row, ["categoryIds", "categories", "categorySlugs"]),
+    getRowValue(row, ["categoryId", "categorySlug", "category", "categoryName"])
+  ];
+  const categoryMap = new Map();
+  categories.forEach((category) => {
+    [category._id, category.slug, category.name].filter(Boolean).forEach((value) => {
+      categoryMap.set(String(value).trim().toLowerCase(), category._id);
+    });
+  });
+
+  return Array.from(new Set(rawValues.flatMap(parseList)
+    .map((value) => categoryMap.get(String(value).trim().toLowerCase()))
+    .filter(Boolean)));
 }
 
 function downloadFile(filename, content, type) {
@@ -125,38 +176,59 @@ function downloadFile(filename, content, type) {
 }
 
 function buildPayloadFromRow(row, categories, rowNumber) {
-  const name = String(row.name || "").trim();
-  const description = String(row.description || "").trim();
-  const sku = String(row.sku || "").trim();
-  const categoryKey = String(row.categoryId || row.categorySlug || row.category || row.categoryName || "").trim().toLowerCase();
-  const category = categories.find((entry) =>
-    [entry._id, entry.slug, entry.name]
-      .filter(Boolean)
-      .map((value) => String(value).trim().toLowerCase())
-      .includes(categoryKey)
-  );
+  const name = String(getRowValue(row, ["name"]) || "").trim();
+  const description = String(getRowValue(row, ["description"]) || "").trim();
+  const sku = String(getRowValue(row, ["sku"]) || "").trim();
+  const categoryIds = getCategoryIdsFromRow(row, categories);
 
-  if (!name || !description || !sku || !category) {
+  if (!name || !description || !sku || !categoryIds.length) {
     throw new Error(`Import row ${rowNumber} is missing name, description, sku, or category.`);
   }
 
+  const price = Number(getRowValue(row, ["price"]) || 0);
+  const compareAtPrice = getRowValue(row, ["compareAtPrice"]);
+  const stock = Number(getRowValue(row, ["stock"]) || 0);
+  const merchant = {
+    brand: String(getRowValue(row, ["brand", "merchant.brand"]) || "").trim(),
+    gtin: String(getRowValue(row, ["gtin", "merchant.gtin"]) || "").trim(),
+    mpn: String(getRowValue(row, ["mpn", "merchant.mpn"]) || "").trim(),
+    googleProductCategory: String(getRowValue(row, ["googleProductCategory", "merchant.googleProductCategory"]) || "").trim(),
+    condition: String(getRowValue(row, ["condition", "merchant.condition"]) || "new").trim() || "new",
+    ageGroup: String(getRowValue(row, ["ageGroup", "merchant.ageGroup"]) || "").trim(),
+    gender: String(getRowValue(row, ["gender", "merchant.gender"]) || "").trim(),
+    color: String(getRowValue(row, ["color", "merchant.color"]) || "").trim(),
+    size: String(getRowValue(row, ["size", "merchant.size"]) || "").trim(),
+    material: String(getRowValue(row, ["material", "merchant.material"]) || "").trim(),
+    pattern: String(getRowValue(row, ["pattern", "merchant.pattern"]) || "").trim()
+  };
+
   return {
     name,
-    slug: String(row.slug || "").trim() || undefined,
+    slug: String(getRowValue(row, ["slug"]) || "").trim() || undefined,
     description,
-    shortDescription: String(row.shortDescription || "").trim() || description.slice(0, 180),
-    price: Number(row.price || 0),
-    compareAtPrice: row.compareAtPrice ? Number(row.compareAtPrice) : undefined,
-    categoryId: category._id,
-    stock: Number(row.stock || 0),
+    shortDescription: String(getRowValue(row, ["shortDescription"]) || "").trim() || description.slice(0, 180),
+    price,
+    compareAtPrice: compareAtPrice ? Number(compareAtPrice) : undefined,
+    categoryId: categoryIds[0],
+    categoryIds,
+    stock,
+    weight: Number(getRowValue(row, ["weight"]) || 0),
     sku,
-    benefitsHeading: String(row.benefitsHeading || "").trim(),
-    benefitsText: String(row.benefitsText || "").trim(),
-    tags: parseList(row.tags),
+    images: parseJsonField(getRowValue(row, ["images"]), []),
+    variants: parseJsonField(getRowValue(row, ["variants"]), []),
+    variantCombinations: parseJsonField(getRowValue(row, ["variantCombinations"]), []),
+    benefitsHeading: String(getRowValue(row, ["benefitsHeading"]) || "").trim(),
+    benefitsText: String(getRowValue(row, ["benefitsText"]) || "").trim(),
+    tags: parseList(getRowValue(row, ["tags"])),
+    merchant,
+    shippingAreaIds: parseList(getRowValue(row, ["shippingAreaIds", "shippingAreas"])),
+    isFeatured: parseBoolean(getRowValue(row, ["isFeatured"])),
+    status: String(getRowValue(row, ["status"]) || "").trim().toLowerCase(),
+    rejectionReason: String(getRowValue(row, ["rejectionReason"]) || "").trim(),
     seo: {
-      metaTitle: String(row.metaTitle || name).trim(),
-      metaDescription: String(row.metaDescription || row.shortDescription || description.slice(0, 160)).trim(),
-      keywords: parseList(row.keywords || row.tags)
+      metaTitle: String(getRowValue(row, ["metaTitle", "seo.metaTitle"]) || name).trim(),
+      metaDescription: String(getRowValue(row, ["metaDescription", "seo.metaDescription", "shortDescription"]) || description.slice(0, 160)).trim(),
+      keywords: parseList(getRowValue(row, ["keywords", "seo.keywords", "tags"]))
     }
   };
 }
@@ -171,7 +243,7 @@ function parseImportFile(text, filename, categories) {
   const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
   if (lines.length < 2) throw new Error("CSV import must include a header row and at least one product row.");
 
-  const headers = parseCsvLine(lines[0]);
+  const headers = parseCsvLine(lines[0]).map(normalizeHeader);
   return lines.slice(1).map((line, index) => {
     const values = parseCsvLine(line);
     const row = headers.reduce((accumulator, header, headerIndex) => {
@@ -304,10 +376,19 @@ export default function AdminProductsPage() {
 
   function exportProducts() {
     const rows = selectedProducts.length ? selectedProducts : products;
+    const headers = [
+      "id", "name", "slug", "description", "shortDescription", "price", "compareAtPrice", "stock", "weight", "sku",
+      "categoryId", "categoryIds", "categorySlug", "categorySlugs", "categoryNames", "tags", "images", "variants",
+      "variantCombinations", "benefitsHeading", "benefitsText", "brand", "gtin", "mpn", "googleProductCategory",
+      "condition", "ageGroup", "gender", "color", "size", "material", "pattern", "shippingAreaIds", "shippingAreas",
+      "metaTitle", "metaDescription", "keywords", "status", "rejectionReason", "ratingAverage", "ratingCount",
+      "soldCount", "isFeatured", "vendorId", "vendorLabel", "createdAt", "updatedAt"
+    ];
     const csv = [
-      ["name", "slug", "description", "shortDescription", "price", "compareAtPrice", "stock", "sku", "categoryId", "categorySlug", "tags", "metaTitle", "metaDescription", "keywords"].join(","),
+      headers.join(","),
       ...rows.map((product) =>
         [
+          product._id || "",
           product.name,
           product.slug || "",
           product.description || "",
@@ -315,13 +396,45 @@ export default function AdminProductsPage() {
           product.price ?? "",
           product.compareAtPrice ?? "",
           product.stock ?? 0,
+          product.weight ?? 0,
           product.sku || "",
           product.category?._id || "",
+          (product.categories || []).map((category) => category?._id || category).join("|"),
           product.category?.slug || product.categorySlug || "",
+          (product.categorySlugs || []).join("|"),
+          (product.categories || []).map((category) => category?.name || "").filter(Boolean).join("|"),
           (product.tags || []).join("|"),
+          stringifyJsonField(product.images || []),
+          stringifyJsonField(product.variants || []),
+          stringifyJsonField(product.variantCombinations || []),
+          product.benefitsHeading || "",
+          product.benefitsText || "",
+          product.merchant?.brand || "",
+          product.merchant?.gtin || "",
+          product.merchant?.mpn || "",
+          product.merchant?.googleProductCategory || "",
+          product.merchant?.condition || "new",
+          product.merchant?.ageGroup || "",
+          product.merchant?.gender || "",
+          product.merchant?.color || "",
+          product.merchant?.size || "",
+          product.merchant?.material || "",
+          product.merchant?.pattern || "",
+          (product.shippingAreas || []).map((area) => area?._id || area).join("|"),
+          (product.shippingAreas || []).map((area) => area?.name || area?.areaName || area?.label || "").filter(Boolean).join("|"),
           product.seo?.metaTitle || "",
           product.seo?.metaDescription || "",
-          (product.seo?.keywords || []).join("|")
+          (product.seo?.keywords || []).join("|"),
+          product.status || "",
+          product.rejectionReason || "",
+          product.ratingAverage ?? 0,
+          product.ratingCount ?? 0,
+          product.soldCount ?? 0,
+          product.isFeatured ? "true" : "false",
+          product.vendor?._id || product.vendor || "",
+          product.vendorLabel || "",
+          product.createdAt || "",
+          product.updatedAt || ""
         ].map(toCsvValue).join(",")
       )
     ].join("\n");
@@ -339,7 +452,14 @@ export default function AdminProductsPage() {
       const [text, categoriesResponse] = await Promise.all([file.text(), marketplaceApi.getAdminCategories(token)]);
       const payloads = parseImportFile(text, file.name, categoriesResponse.data || []);
       for (const payload of payloads) {
-        await marketplaceApi.createAdminProduct(token, payload);
+        const response = await marketplaceApi.createAdminProduct(token, payload);
+        const status = String(payload.status || "").trim();
+        if (response?.data?._id && ["pending", "approved", "rejected"].includes(status)) {
+          await marketplaceApi.updateProductStatus(token, response.data._id, {
+            status,
+            rejectionReason: payload.rejectionReason || ""
+          });
+        }
       }
       setNotice(`${payloads.length} products imported successfully.`);
       setSelectedIds([]);

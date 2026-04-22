@@ -18,7 +18,8 @@ import {
   listPages,
   listProducts,
   listStores,
-  productFeed
+  productFeed,
+  sitemapData
 } from "../../controllers/catalog/catalog.controller.js";
 import { createOrder, quoteCoupon } from "../../controllers/customer/customer.controller.js";
 import { submitContactForm, subscribeNewsletter } from "../../controllers/catalog/engagement.controller.js";
@@ -44,6 +45,7 @@ router.get("/pages", listPages);
 router.get("/pages/:slug", getPageBySlug);
 router.get("/policies/:slug", getPolicyBySlug);
 router.get("/seo-pages/:key", getSeoPageByKey);
+router.get("/sitemap", sitemapData);
 router.get("/feed/products.xml", productFeed);
 router.post("/newsletter/subscribe", subscribeNewsletter);
 router.post("/contact", optionalProtect, submitContactForm);

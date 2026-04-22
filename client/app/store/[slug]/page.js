@@ -1,6 +1,7 @@
 ﻿import Link from "next/link";
 import { ProductCard } from "@/components/shared/ProductCard";
 import { marketplaceApi } from "@/lib/api/marketplace";
+import { cleanMetaDescription, cleanPageTitle } from "@/lib/utils/metadata";
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
@@ -13,9 +14,22 @@ export async function generateMetadata({ params }) {
     };
   }
 
+  const title = cleanPageTitle(data.vendor.storeName);
+  const description = cleanMetaDescription(data.vendor.storeDescription, `${data.vendor.storeName} storefront`);
+
   return {
-    title: data.vendor.storeName,
-    description: data.vendor.storeDescription || `${data.vendor.storeName} storefront`
+    title,
+    description,
+    alternates: {
+      canonical: `/store/${data.vendor.storeSlug || slug}`
+    },
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      url: `/store/${data.vendor.storeSlug || slug}`,
+      images: data.vendor.storeLogo ? [{ url: data.vendor.storeLogo, alt: `${data.vendor.storeName} logo` }] : undefined
+    }
   };
 }
 

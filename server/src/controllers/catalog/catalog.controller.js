@@ -10,6 +10,7 @@ import { SeoPage } from "../../models/SeoPage.js";
 import { User } from "../../models/User.js";
 import { Review } from "../../models/Review.js";
 import { ReviewSettings } from "../../models/ReviewSettings.js";
+import { env } from "../../config/env.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { asyncHandler } from "../../utils/asyncHandler.js";
 import { DESIGNED_SEO_PAGE_KEYS, ensureDesignedSeoPages } from "../../utils/designedSeoPages.js";
@@ -44,6 +45,152 @@ async function refreshProductReviewStats(productId) {
       ratingAverage: Number(ratingAverage.toFixed(2))
     }
   );
+}
+
+function stripHtml(value = "") {
+  return String(value)
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function trimText(value, maxLength) {
+  const text = stripHtml(value);
+  return maxLength && text.length > maxLength ? text.slice(0, maxLength).trim() : text;
+}
+
+function absoluteSiteUrl(path = "/") {
+  try {
+    return new URL(path, `${env.clientUrl.replace(/\/+$/, "")}/`).toString();
+  } catch {
+    return `${env.clientUrl.replace(/\/+$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
+  }
+}
+
+function absoluteAssetUrl(source = "") {
+  const value = String(source || "").trim();
+  if (!value || value.startsWith("data:") || value.startsWith("blob:")) return "";
+
+  try {
+    const url = new URL(value, `${env.clientUrl.replace(/\/+$/, "")}/`);
+    if (url.pathname.startsWith("/uploads/")) {
+      return absoluteSiteUrl(url.pathname);
+    }
+    return url.toString();
+  } catch {
+    return "";
+  }
+}
+
+function normalizeOptionValues(optionValues = {}) {
+  if (optionValues instanceof Map) return Object.fromEntries(optionValues);
+  return optionValues && typeof optionValues === "object" ? optionValues : {};
+}
+
+function findVariantAttribute(optionValues, names = []) {
+  const wanted = names.map((name) => name.toLowerCase());
+  const entry = Object.entries(optionValues).find(([key]) => wanted.includes(String(key).toLowerCase()));
+  return entry?.[1] || "";
+}
+
+function formatPrice(value) {
+  return `${Number(value || 0).toFixed(2)} ${env.currency}`;
+}
+
+function hasRequiredFeedData(product, item) {
+  return Boolean(
+    item.title &&
+    item.description &&
+    item.link &&
+    item.imageLink &&
+    Number(item.price) >= 0 &&
+    product.slug
+  );
+}
+
+function buildFeedItems(product) {
+  const merchant = product.merchant || {};
+  const categoryName = product.category?.name || "General";
+  const brand = merchant.brand || product.vendor?.storeName || product.vendor?.name || "Marketplace";
+  const baseImages = (product.images || []).map((image) => absoluteAssetUrl(image?.url || image)).filter(Boolean);
+  const baseDescription = trimText(product.shortDescription || product.description, 5000);
+  const variantCombinations = Array.isArray(product.variantCombinations) ? product.variantCombinations : [];
+  const hasVariants = variantCombinations.length > 0;
+
+  const sourceItems = hasVariants
+    ? variantCombinations.map((variant, index) => {
+        const optionValues = normalizeOptionValues(variant.optionValues);
+        const optionSuffix = Object.values(optionValues).filter(Boolean).join(" / ");
+        return {
+          id: String(variant.sku || (product.sku ? `${product.sku}-${index + 1}` : `${product._id}-${index + 1}`)).slice(0, 50),
+          title: trimText(optionSuffix ? `${product.name} - ${optionSuffix}` : product.name, 150),
+          price: Number(variant.price || product.price || 0),
+          stock: Number(variant.stock ?? product.stock ?? 0),
+          imageLink: absoluteAssetUrl(variant.image) || baseImages[0],
+          optionValues,
+          itemGroupId: String(product.sku || product._id).slice(0, 50)
+        };
+      })
+    : [{
+        id: String(product.sku || product._id).slice(0, 50),
+        title: trimText(product.name, 150),
+        price: Number(product.price || 0),
+        stock: Number(product.stock || 0),
+        imageLink: baseImages[0],
+        optionValues: {},
+        itemGroupId: ""
+      }];
+
+  return sourceItems
+    .map((item) => ({
+      ...item,
+      description: baseDescription,
+      link: absoluteSiteUrl(`/product/${product.slug}`),
+      additionalImages: baseImages.filter((image) => image !== item.imageLink).slice(0, 10),
+      brand,
+      categoryName,
+      merchant,
+      gtin: merchant.gtin || "",
+      mpn: merchant.mpn || "",
+      color: findVariantAttribute(item.optionValues, ["color", "colour"]) || merchant.color || "",
+      size: findVariantAttribute(item.optionValues, ["size"]) || merchant.size || "",
+      material: findVariantAttribute(item.optionValues, ["material"]) || merchant.material || "",
+      pattern: findVariantAttribute(item.optionValues, ["pattern"]) || merchant.pattern || ""
+    }))
+    .filter((item) => hasRequiredFeedData(product, item));
+}
+
+function productToFeedXmlItem(product, item) {
+  const identifierExists = Boolean(item.gtin || (item.brand && item.mpn));
+  const children = [
+    { "g:id": item.id },
+    { title: item.title },
+    { description: item.description },
+    { link: item.link },
+    { "g:image_link": item.imageLink },
+    ...item.additionalImages.map((image) => ({ "g:additional_image_link": image })),
+    { "g:availability": item.stock > 0 ? "in_stock" : "out_of_stock" },
+    { "g:price": formatPrice(item.price) },
+    { "g:condition": item.merchant.condition || "new" },
+    { "g:brand": item.brand },
+    { "g:product_type": item.categoryName }
+  ];
+
+  if (item.merchant.googleProductCategory) children.push({ "g:google_product_category": item.merchant.googleProductCategory });
+  if (item.gtin) children.push({ "g:gtin": item.gtin });
+  if (item.mpn) children.push({ "g:mpn": item.mpn });
+  if (!identifierExists) children.push({ "g:identifier_exists": "no" });
+  if (item.itemGroupId) children.push({ "g:item_group_id": item.itemGroupId });
+  if (item.color) children.push({ "g:color": item.color });
+  if (item.size) children.push({ "g:size": item.size });
+  if (item.material) children.push({ "g:material": item.material });
+  if (item.pattern) children.push({ "g:pattern": item.pattern });
+  if (item.merchant.ageGroup) children.push({ "g:age_group": item.merchant.ageGroup });
+  if (item.merchant.gender) children.push({ "g:gender": item.merchant.gender });
+
+  return { item: children };
 }
 
 export const listProducts = asyncHandler(async (req, res) => {
@@ -288,10 +435,15 @@ export const resolveRedirect = asyncHandler(async (req, res) => {
 
 export const productFeed = asyncHandler(async (_req, res) => {
   const products = await Product.find({ status: "approved" })
-    .populate("category", "name")
-    .populate("vendor", "storeName")
+    .populate("category", "name slug")
+    .populate("vendor", "name storeName")
+    .sort("-updatedAt")
     .limit(1000)
     .lean();
+
+  const items = products.flatMap((product) =>
+    buildFeedItems(product).map((feedItem) => productToFeedXmlItem(product, feedItem))
+  );
 
   const feed = xml(
     [
@@ -301,21 +453,9 @@ export const productFeed = asyncHandler(async (_req, res) => {
           {
             channel: [
               { title: "Marketplace Product Feed" },
-              { description: "SEO product feed for Merchant Center" },
-              { link: "http://localhost:3000" },
-              ...products.map((product) => ({
-                item: [
-                  { "g:id": String(product._id) },
-                  { title: product.name },
-                  { description: product.shortDescription || product.description },
-                  { link: `http://localhost:3000/product/${product.slug}` },
-                  { "g:price": `${product.price} USD` },
-                  { "g:availability": product.stock > 0 ? "in stock" : "out of stock" },
-                  { "g:brand": product.vendor?.storeName || "Marketplace" },
-                  { "g:product_type": product.category?.name || "General" },
-                  { "g:image_link": product.images?.[0]?.url || "" }
-                ]
-              }))
+              { description: "Google Merchant Center product feed" },
+              { link: absoluteSiteUrl("/") },
+              ...items
             ]
           }
         ]
@@ -326,4 +466,23 @@ export const productFeed = asyncHandler(async (_req, res) => {
 
   res.set("Content-Type", "application/xml");
   res.send(feed);
+});
+
+export const sitemapData = asyncHandler(async (_req, res) => {
+  const [products, categories, stores, pages] = await Promise.all([
+    Product.find({ status: "approved" }).select("slug updatedAt").sort("-updatedAt").limit(5000).lean(),
+    Category.find({ isActive: true }).select("slug updatedAt").sort("slug").lean(),
+    User.find({ role: "vendor", status: "active", storeSlug: { $ne: "" } }).select("storeSlug updatedAt").sort("storeSlug").lean(),
+    Page.find({ isPublished: true }).select("slug type updatedAt").sort("slug").lean()
+  ]);
+
+  res.json({
+    success: true,
+    data: {
+      products,
+      categories,
+      stores,
+      pages: pages.map((page) => normalizePageResponse(page))
+    }
+  });
 });

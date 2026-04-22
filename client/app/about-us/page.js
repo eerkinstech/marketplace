@@ -47,7 +47,7 @@ const workflow = [
 
 export async function generateMetadata() {
   const seoPage = await loadDesignedPageSeo("about-us");
-  return buildDesignedPageMetadata("About Us", seoPage);
+  return buildDesignedPageMetadata("About Us", seoPage, "/about-us");
 }
 
 export default function AboutUsPage() {

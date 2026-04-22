@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { marketplaceApi } from "@/lib/api/marketplace";
+import { cleanMetaDescription, cleanPageTitle } from "@/lib/utils/metadata";
 
 async function loadPolicy(slug) {
   const response = await marketplaceApi.safeGetPolicyBySlug(slug);
@@ -16,9 +17,21 @@ export async function generateMetadata({ params }) {
     };
   }
 
+  const title = cleanPageTitle(policy?.seo?.metaTitle, policy.title);
+  const description = cleanMetaDescription(policy?.seo?.metaDescription);
+
   return {
-    title: policy?.seo?.metaTitle || policy.title,
-    description: policy?.seo?.metaDescription || undefined
+    title,
+    description,
+    alternates: {
+      canonical: `/policies/${policy.slug}`
+    },
+    openGraph: {
+      type: "article",
+      title,
+      description,
+      url: `/policies/${policy.slug}`
+    }
   };
 }
 

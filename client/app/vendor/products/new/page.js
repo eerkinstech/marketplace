@@ -26,7 +26,18 @@ const initialFormData = {
   benefitFields: [],
   metaTitle: "",
   metaDescription: "",
-  metaKeywords: ""
+  metaKeywords: "",
+  merchantBrand: "",
+  gtin: "",
+  mpn: "",
+  googleProductCategory: "",
+  condition: "new",
+  color: "",
+  size: "",
+  gender: "",
+  ageGroup: "",
+  material: "",
+  pattern: ""
 };
 
 function stripHtml(value) {
@@ -106,7 +117,18 @@ function buildFormData(product) {
     benefitFields: parseBenefitFields(product.benefitsText || ""),
     metaTitle: product.seo?.metaTitle || "",
     metaDescription: product.seo?.metaDescription || "",
-    metaKeywords: (product.seo?.keywords || product.tags || []).join(", ")
+    metaKeywords: (product.seo?.keywords || product.tags || []).join(", "),
+    merchantBrand: product.merchant?.brand || "",
+    gtin: product.merchant?.gtin || "",
+    mpn: product.merchant?.mpn || "",
+    googleProductCategory: product.merchant?.googleProductCategory || "",
+    condition: product.merchant?.condition || "new",
+    color: product.merchant?.color || "",
+    size: product.merchant?.size || "",
+    gender: product.merchant?.gender || "",
+    ageGroup: product.merchant?.ageGroup || "",
+    material: product.merchant?.material || "",
+    pattern: product.merchant?.pattern || ""
   };
 }
 
@@ -211,6 +233,19 @@ function VendorProductPageContent() {
           metaTitle: formData.metaTitle.trim(),
           metaDescription: formData.metaDescription.trim(),
           keywords: parsedKeywords
+        },
+        merchant: {
+          brand: formData.merchantBrand.trim(),
+          gtin: formData.gtin.trim(),
+          mpn: formData.mpn.trim(),
+          googleProductCategory: formData.googleProductCategory.trim(),
+          condition: formData.condition || "new",
+          color: formData.color.trim(),
+          size: formData.size.trim(),
+          gender: formData.gender.trim(),
+          ageGroup: formData.ageGroup.trim(),
+          material: formData.material.trim(),
+          pattern: formData.pattern.trim()
         },
         images: formData.images
       };

@@ -14,6 +14,20 @@ const productVariantCombinationSchema = z.object({
   image: z.string().optional()
 });
 
+const merchantSchema = z.object({
+  brand: z.string().max(70).optional(),
+  gtin: z.string().max(50).optional(),
+  mpn: z.string().max(70).optional(),
+  googleProductCategory: z.string().max(250).optional(),
+  condition: z.enum(["new", "refurbished", "used"]).optional(),
+  ageGroup: z.string().max(30).optional(),
+  gender: z.string().max(30).optional(),
+  color: z.string().max(100).optional(),
+  size: z.string().max(100).optional(),
+  material: z.string().max(200).optional(),
+  pattern: z.string().max(100).optional()
+});
+
 export const productSchema = z.object({
   name: z.string().min(3),
   slug: z.string().min(3).optional(),
@@ -31,7 +45,9 @@ export const productSchema = z.object({
   benefitsHeading: z.string().optional(),
   benefitsText: z.string().optional(),
   tags: z.array(z.string()).optional(),
+  merchant: merchantSchema.optional(),
   shippingAreaIds: z.array(z.string().min(1)).optional(),
+  isFeatured: z.boolean().optional(),
   seo: z
     .object({
       metaTitle: z.string().optional(),

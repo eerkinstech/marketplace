@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { ProductsCatalogView } from "@/components/storefront/ProductsCatalogView";
 import { marketplaceApi } from "@/lib/api/marketplace";
+import { cleanMetaDescription, cleanPageTitle } from "@/lib/utils/metadata";
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
@@ -14,9 +15,22 @@ export async function generateMetadata({ params }) {
     };
   }
 
+  const title = cleanPageTitle(category.seo?.metaTitle, `${category.name} category`);
+  const description = cleanMetaDescription(category.seo?.metaDescription, category.description || `Browse products in the ${category.name} category.`);
+
   return {
-    title: `${category.name} category`,
-    description: category.description || `Browse products in the ${category.name} category.`
+    title,
+    description,
+    alternates: {
+      canonical: `/category/${category.slug}`
+    },
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      url: `/category/${category.slug}`,
+      images: category.image ? [{ url: category.image, alt: category.name }] : undefined
+    }
   };
 }
 

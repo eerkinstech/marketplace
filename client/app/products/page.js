@@ -1,5 +1,20 @@
 import { ProductsCatalogView } from "@/components/storefront/ProductsCatalogView";
 import { marketplaceApi } from "@/lib/api/marketplace";
+import { SITE_NAME } from "@/lib/constants/site";
+
+export const metadata = {
+  title: "Products",
+  description: `Browse products, categories, and marketplace sellers on ${SITE_NAME}.`,
+  alternates: {
+    canonical: "/products"
+  },
+  openGraph: {
+    type: "website",
+    title: "Products",
+    description: `Browse products, categories, and marketplace sellers on ${SITE_NAME}.`,
+    url: "/products"
+  }
+};
 
 export default async function ProductsPage({ searchParams }) {
   const params = await searchParams;

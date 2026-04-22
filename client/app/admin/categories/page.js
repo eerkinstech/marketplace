@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import CategoryModal from "@/components/admin/CategoryModal";
 import { marketplaceApi } from "@/lib/api/marketplace";
@@ -18,6 +18,8 @@ function Icon({ name, className = "h-4 w-4" }) {
 
   const icons = {
     add: <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14M5 12h14" />,
+    upload: <path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0-4 4m4-4 4 4M5 18v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1" />,
+    download: <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v12m0 0 4-4m-4 4-4-4M5 18v1a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1" />,
     edit: <path strokeLinecap="round" strokeLinejoin="round" d="M4 20h4l10-10a2.12 2.12 0 1 0-3-3L5 17v3Z" />,
     trash: <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M10 11v6M14 11v6M6 7l1 12a1 1 0 0 0 1 .9h8a1 1 0 0 0 1-.9L18 7M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
   };
@@ -36,6 +38,123 @@ function generateSlug(value) {
 
 function getParentId(category) {
   return category?.parentId || category?.parent?._id || category?.parent || "";
+}
+
+function parseCsvLine(line) {
+  const values = [];
+  let current = "";
+  let quoted = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    const next = line[index + 1];
+    if (char === "\"") {
+      if (quoted && next === "\"") {
+        current += "\"";
+        index += 1;
+      } else {
+        quoted = !quoted;
+      }
+      continue;
+    }
+    if (char === "," && !quoted) {
+      values.push(current.trim());
+      current = "";
+      continue;
+    }
+    current += char;
+  }
+
+  values.push(current.trim());
+  return values;
+}
+
+function toCsvValue(value) {
+  const text = String(value ?? "");
+  if (text.includes(",") || text.includes("\"") || text.includes("\n")) {
+    return `"${text.replace(/"/g, "\"\"")}"`;
+  }
+  return text;
+}
+
+function parseBoolean(value) {
+  if (typeof value === "boolean") return value;
+  const text = String(value ?? "").trim().toLowerCase();
+  if (!text) return true;
+  return ["1", "true", "yes", "active", "enabled"].includes(text);
+}
+
+function getRowValue(row, keys) {
+  const wanted = keys.map((key) => String(key).toLowerCase());
+  const match = Object.entries(row).find(([key]) => wanted.includes(String(key).trim().toLowerCase()));
+  return match?.[1] ?? "";
+}
+
+function resolveCategoryReference(value, categories) {
+  const key = String(value || "").trim().toLowerCase();
+  if (!key) return "";
+  const category = categories.find((entry) =>
+    [entry._id, entry.slug, entry.name]
+      .filter(Boolean)
+      .some((candidate) => String(candidate).trim().toLowerCase() === key)
+  );
+  return category?._id || "";
+}
+
+function buildCategoryPayloadFromRow(row, categories, rowNumber) {
+  const name = String(getRowValue(row, ["name", "title"]) || "").trim();
+  const slug = String(getRowValue(row, ["slug"]) || generateSlug(name)).trim();
+  if (!name || !slug) {
+    throw new Error(`Import row ${rowNumber} is missing name or slug.`);
+  }
+
+  const parentId = resolveCategoryReference(getRowValue(row, ["parentId", "parentSlug", "parentName", "parent"]), categories);
+
+  return {
+    id: String(getRowValue(row, ["id", "_id"]) || "").trim(),
+    parentRef: String(getRowValue(row, ["parentId", "parentSlug", "parentName", "parent"]) || "").trim(),
+    payload: {
+      name,
+      slug,
+      parentId: parentId || undefined,
+      description: String(getRowValue(row, ["description"]) || "").trim(),
+      image: String(getRowValue(row, ["image", "imageUrl"]) || "").trim(),
+      isActive: parseBoolean(getRowValue(row, ["isActive", "active", "status"])),
+      metaTitle: String(getRowValue(row, ["metaTitle", "seo.metaTitle"]) || "").trim(),
+      metaDescription: String(getRowValue(row, ["metaDescription", "seo.metaDescription"]) || "").trim(),
+      metaKeywords: String(getRowValue(row, ["metaKeywords", "keywords", "seo.keywords"]) || "").trim()
+    }
+  };
+}
+
+function parseCategoryImportFile(text, filename, categories) {
+  if (filename.toLowerCase().endsWith(".json")) {
+    const rows = JSON.parse(text);
+    if (!Array.isArray(rows)) throw new Error("JSON import must be an array of categories.");
+    return rows.map((row, index) => buildCategoryPayloadFromRow(row, categories, index + 1));
+  }
+
+  const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  if (lines.length < 2) throw new Error("CSV import must include a header row and at least one category row.");
+  const headers = parseCsvLine(lines[0]);
+  return lines.slice(1).map((line, index) => {
+    const values = parseCsvLine(line);
+    const row = headers.reduce((accumulator, header, headerIndex) => {
+      accumulator[header] = values[headerIndex] ?? "";
+      return accumulator;
+    }, {});
+    return buildCategoryPayloadFromRow(row, categories, index + 2);
+  });
+}
+
+function downloadFile(filename, content, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function buildTree(categories, parentId = "") {
@@ -182,7 +301,8 @@ const emptyForm = {
   metaTitle: "",
   metaDescription: "",
   metaKeywords: "",
-  parentId: ""
+  parentId: "",
+  isActive: true
 };
 
 export default function AdminCategoriesPage() {
@@ -201,6 +321,7 @@ export default function AdminCategoriesPage() {
   const [formData, setFormData] = useState(emptyForm);
   const [originalSlug, setOriginalSlug] = useState("");
   const [shouldCreateRedirect, setShouldCreateRedirect] = useState(false);
+  const importInputRef = useRef(null);
 
   async function loadCategories() {
     if (!token) return;
@@ -326,7 +447,8 @@ export default function AdminCategoriesPage() {
       metaTitle: category.metaTitle || "",
       metaDescription: category.metaDescription || "",
       metaKeywords: category.metaKeywords || "",
-      parentId: String(getParentId(category) || "")
+      parentId: String(getParentId(category) || ""),
+      isActive: category.isActive !== false
     });
     setShowModal(true);
   }
@@ -363,6 +485,7 @@ export default function AdminCategoriesPage() {
       description: formData.description.trim(),
       image: formData.image || "",
       parentId: formData.parentId || undefined,
+      isActive: formData.isActive !== false,
       metaTitle: formData.metaTitle.trim(),
       metaDescription: formData.metaDescription.trim(),
       metaKeywords: formData.metaKeywords.trim()
@@ -416,6 +539,84 @@ export default function AdminCategoriesPage() {
     }
   }
 
+  function exportCategories() {
+    const headers = [
+      "id", "name", "slug", "parentId", "parentSlug", "parentName", "description", "image",
+      "isActive", "metaTitle", "metaDescription", "metaKeywords", "productCount", "createdAt", "updatedAt"
+    ];
+    const csv = [
+      headers.join(","),
+      ...filteredFlatCategories.map((category) => [
+        category._id || "",
+        category.name || "",
+        category.slug || "",
+        getParentId(category) || "",
+        category.parent?.slug || "",
+        category.parent?.name || "",
+        category.description || "",
+        category.image || "",
+        category.isActive === false ? "false" : "true",
+        category.metaTitle || category.seo?.metaTitle || "",
+        category.metaDescription || category.seo?.metaDescription || "",
+        category.metaKeywords || (category.seo?.keywords || []).join(", "),
+        category.productCount || 0,
+        category.createdAt || "",
+        category.updatedAt || ""
+      ].map(toCsvValue).join(","))
+    ].join("\n");
+
+    downloadFile("admin-categories-export.csv", csv, "text/csv;charset=utf-8");
+    setNotice(`${filteredFlatCategories.length} categories exported.`);
+  }
+
+  async function handleImportCategories(event) {
+    const file = event.target.files?.[0];
+    if (!file || !token) return;
+
+    try {
+      setLoading(true);
+      const rows = parseCategoryImportFile(await file.text(), file.name, categories);
+      const knownCategories = [...categories];
+      let created = 0;
+      let updated = 0;
+
+      for (const row of rows) {
+        if (!row.payload.parentId && row.parentRef) {
+          const parentId = resolveCategoryReference(row.parentRef, knownCategories);
+          if (parentId) row.payload.parentId = parentId;
+        }
+
+        const existing = knownCategories.find((category) =>
+          (row.id && String(category._id) === row.id) ||
+          String(category.slug || "").toLowerCase() === String(row.payload.slug || "").toLowerCase()
+        );
+
+        if (existing?._id) {
+          const response = await marketplaceApi.updateCategory(token, existing._id, row.payload);
+          const updatedCategory = response?.data || { ...existing, ...row.payload, _id: existing._id };
+          const knownIndex = knownCategories.findIndex((category) => String(category._id) === String(existing._id));
+          if (knownIndex >= 0) knownCategories[knownIndex] = updatedCategory;
+          updated += 1;
+        } else {
+          const response = await marketplaceApi.createCategory(token, row.payload);
+          if (response?.data) knownCategories.push(response.data);
+          created += 1;
+        }
+      }
+
+      setNotice(`Imported ${rows.length} categories (${created} created, ${updated} updated).`);
+      toast.success(`Imported ${rows.length} categories`);
+      await loadCategories();
+    } catch (error) {
+      const message = error?.message || "Failed to import categories";
+      setPageError(message);
+      toast.error(message);
+    } finally {
+      if (importInputRef.current) importInputRef.current.value = "";
+      setLoading(false);
+    }
+  }
+
   function toggleExpanded(categoryId) {
     setExpandedIds((current) => {
       const next = new Set(current);
@@ -435,14 +636,34 @@ export default function AdminCategoriesPage() {
             <h1 className="mt-3 text-3xl font-black tracking-[-0.04em] text-[#1f2937]">Category Management</h1>
 
           </div>
-          <button
-            type="button"
-            onClick={openAddCategoryModal}
-            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#b56d2d] px-4 py-3 text-[13px] font-semibold text-white shadow-[0_10px_30px_rgba(181,109,45,0.25)] transition hover:-translate-y-0.5"
-          >
-            <Icon name="add" />
-            Add Category
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => importInputRef.current?.click()}
+              disabled={loading}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#2f3136] px-4 py-3 text-[13px] font-semibold text-white transition hover:-translate-y-0.5 disabled:opacity-60"
+            >
+              <Icon name="upload" />
+              Import
+            </button>
+            <button
+              type="button"
+              onClick={exportCategories}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#d7c5b1] bg-[#fbf7f1] px-4 py-3 text-[13px] font-semibold text-[#84552b] transition hover:bg-[#f4ece2]"
+            >
+              <Icon name="download" />
+              Export
+            </button>
+            <button
+              type="button"
+              onClick={openAddCategoryModal}
+              className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#b56d2d] px-4 py-3 text-[13px] font-semibold text-white shadow-[0_10px_30px_rgba(181,109,45,0.25)] transition hover:-translate-y-0.5"
+            >
+              <Icon name="add" />
+              Add Category
+            </button>
+            <input ref={importInputRef} type="file" accept=".csv,application/json" className="hidden" onChange={handleImportCategories} />
+          </div>
         </div>
       </div>
 

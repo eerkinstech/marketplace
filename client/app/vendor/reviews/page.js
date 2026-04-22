@@ -58,6 +58,14 @@ function statusClass(status = "") {
   return "bg-amber-100 text-amber-800";
 }
 
+function toCsvValue(value) {
+  const text = String(value ?? "");
+  if (text.includes(",") || text.includes("\"") || text.includes("\n")) {
+    return `"${text.replace(/"/g, "\"\"")}"`;
+  }
+  return text;
+}
+
 export default function VendorReviewsPage() {
   const { token, error, setError } = useAccessToken("Login with a vendor account to view reviews.");
   const [loading, setLoading] = useState(true);
@@ -179,27 +187,43 @@ export default function VendorReviewsPage() {
     try {
       const headers = [
         "Review ID",
+        "Order ID",
         "Product Name",
         "Product ID",
+        "Product Slug",
         "User Name",
         "User Email",
+        "Guest Name",
+        "Guest Email",
         "Rating",
         "Comment",
         "Status",
-        "Created At"
+        "Moderation Note",
+        "Reviewed By",
+        "Reviewed At",
+        "Created At",
+        "Updated At"
       ];
 
       const rowsToExport = visibleRows.map((row) => [
         row._id || "",
-        `"${String(row.productName || "").replace(/"/g, "\"\"")}"`,
+        row.order?._id || row.order || "",
+        row.productName || "",
         row.productId || "",
-        `"${String(row.userName || "").replace(/"/g, "\"\"")}"`,
+        row.product?.slug || "",
+        row.userName || "",
         row.userEmail || "",
+        row.guestName || "",
+        row.guestEmail || "",
         row.rating || "0",
-        `"${String(row.comment || "").replace(/"/g, "\"\"").replace(/\n/g, " ")}"`,
+        String(row.comment || "").replace(/\n/g, " "),
         row.status || "pending",
-        row.createdAt ? new Date(row.createdAt).toLocaleString() : ""
-      ]);
+        row.moderationNote || "",
+        row.reviewedBy?.name || row.reviewedBy?.email || "",
+        row.reviewedAt || "",
+        row.createdAt || "",
+        row.updatedAt || ""
+      ].map(toCsvValue));
 
       const csvContent = [headers.join(","), ...rowsToExport.map((row) => row.join(","))].join("\n");
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });

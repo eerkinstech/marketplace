@@ -1,5 +1,20 @@
 import { CategoryCard } from "@/components/storefront/CategoryCard";
 import { marketplaceApi } from "@/lib/api/marketplace";
+import { SITE_NAME } from "@/lib/constants/site";
+
+export const metadata = {
+  title: "Categories",
+  description: `Browse all shopping categories and collections on ${SITE_NAME}.`,
+  alternates: {
+    canonical: "/categories"
+  },
+  openGraph: {
+    type: "website",
+    title: "Categories",
+    description: `Browse all shopping categories and collections on ${SITE_NAME}.`,
+    url: "/categories"
+  }
+};
 
 export default async function CategoriesPage() {
   const { data: categories } = await marketplaceApi.safeGetCategories();

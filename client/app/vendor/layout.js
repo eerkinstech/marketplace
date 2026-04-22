@@ -1,5 +1,16 @@
 import { VendorSidebar } from "@/components/vendor/VendorSidebar";
 
+export const metadata = {
+  title: {
+    absolute: "Vendor Dashboard"
+  },
+  description: "Marketplace vendor dashboard.",
+  robots: {
+    index: false,
+    follow: false
+  }
+};
+
 export default function VendorLayout({ children }) {
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#f5efe7]">

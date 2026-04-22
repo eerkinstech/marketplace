@@ -38,7 +38,7 @@ export default function ProductForm({
     { id: "categories", label: "Categories", icon: "fa-folder" },
     { id: "shipping", label: "Shipping", icon: "fa-truck-fast" },
     { id: "benefits", label: "Benefits", icon: "fa-star" },
-    { id: "seo", label: "SEO", icon: "fa-search" },
+    { id: "seo", label: "SEO & GMC", icon: "fa-search" },
   ];
 
   const handleAutoGenerateSlug = () => {
